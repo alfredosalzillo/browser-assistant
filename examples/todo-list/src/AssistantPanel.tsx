@@ -1,3 +1,23 @@
+import CloseIcon from "@mui/icons-material/Close";
+import SendIcon from "@mui/icons-material/Send";
+import StopIcon from "@mui/icons-material/Stop";
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  Chip,
+  FormControlLabel,
+  IconButton,
+  LinearProgress,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
 import {
   type AnyTool,
   type AssistantSession,
@@ -5,6 +25,7 @@ import {
   type LanguageModelStatic,
   type Step,
   type ToolCall,
+  type ToolResultStatus,
 } from "browser-assistant";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
@@ -33,6 +54,15 @@ type AssistantPanelProps = {
   languageModel?: LanguageModelStatic;
   onClose: () => void;
 };
+
+const statusColor: Record<ToolResultStatus, "success" | "error" | "warning"> = {
+  success: "success",
+  error: "error",
+  rejected: "warning",
+};
+
+const formatCall = (call: ToolCall) =>
+  `${call.name}(${JSON.stringify(call.arguments)})`;
 
 const AssistantPanel = ({
   title,
@@ -122,98 +152,186 @@ const AssistantPanel = ({
   };
 
   return (
-    <section className="panel">
-      <header className="panel-header">
-        <div>
-          <h2>{title}</h2>
-          <small>
-            {preset.label} · tools: {preset.toolNames.join(", ")}
-          </small>
-        </div>
-        <button type="button" onClick={onClose} aria-label="Close session">
-          ✕
-        </button>
-      </header>
-
-      <label className="approval">
-        <input
-          type="checkbox"
-          checked={requireApproval}
-          onChange={(event) => setRequireApproval(event.target.checked)}
+    <Card variant="outlined" sx={{ display: "flex", flexDirection: "column" }}>
+      <CardHeader
+        title={title}
+        subheader={`${preset.label} · tools: ${preset.toolNames.join(", ")}`}
+        action={
+          <IconButton aria-label="Close session" onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        }
+      />
+      <CardContent sx={{ flexGrow: 1, pt: 0 }}>
+        <FormControlLabel
+          control={
+            <Switch
+              size="small"
+              checked={requireApproval}
+              onChange={(event) => setRequireApproval(event.target.checked)}
+            />
+          }
+          label="Ask approval before each call"
         />
-        Ask approval before each call
-      </label>
 
-      <ol className="messages">
-        {error && <li className="message error">{error}</li>}
-        {!session && !error && <li className="message">Creating session…</li>}
-        {messages.map((message, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: messages are append only
-          <li key={index} className={`message ${message.kind}`}>
-            {message.kind === "goal" && <strong>🧑 {message.text}</strong>}
-            {message.kind === "final" && (
-              <span>
-                🤖 {message.text}
-                {message.status !== "completed" && ` (${message.status})`}
-              </span>
-            )}
-            {message.kind === "error" && <span>⚠️ {message.text}</span>}
-            {message.kind === "step" &&
-              message.step.response.type === "calls" && (
-                <div>
-                  <em>{message.step.response.reasoning}</em>
-                  <ul className="calls">
-                    {message.step.results.map((result, callIndex) => (
-                      // biome-ignore lint/suspicious/noArrayIndexKey: results never change
-                      <li key={callIndex} className={result.status}>
-                        <code>
-                          {result.name}({JSON.stringify(result.arguments)})
-                        </code>{" "}
-                        → {result.status}
-                        {result.error && `: ${result.error}`}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+        <Stack
+          component="ol"
+          spacing={1}
+          sx={{ listStyle: "none", p: 0, m: 0, mt: 1 }}
+        >
+          {error && (
+            <Alert component="li" severity="error">
+              {error}
+            </Alert>
+          )}
+          {!session && !error && (
+            <Typography component="li" color="text.secondary">
+              Creating session…
+            </Typography>
+          )}
+          {messages.map((message, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: messages are append only
+            <Box component="li" key={index}>
+              {message.kind === "goal" && (
+                <Box
+                  sx={{
+                    ml: "auto",
+                    width: "fit-content",
+                    maxWidth: "85%",
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: 2,
+                    bgcolor: "primary.main",
+                    color: "primary.contrastText",
+                  }}
+                >
+                  <Typography variant="body2">{message.text}</Typography>
+                </Box>
               )}
-          </li>
-        ))}
-        {running && !pending && <li className="message">Thinking…</li>}
-      </ol>
+              {message.kind === "final" && (
+                <Alert
+                  severity={message.status === "completed" ? "info" : "warning"}
+                  icon={false}
+                >
+                  {message.text}
+                  {message.status !== "completed" && ` (${message.status})`}
+                </Alert>
+              )}
+              {message.kind === "error" && (
+                <Alert severity="error">{message.text}</Alert>
+              )}
+              {message.kind === "step" &&
+                message.step.response.type === "calls" && (
+                  <Stack spacing={0.5}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontStyle: "italic" }}
+                    >
+                      {message.step.response.reasoning}
+                    </Typography>
+                    {message.step.results.map((result, callIndex) => (
+                      <Stack
+                        // biome-ignore lint/suspicious/noArrayIndexKey: results never change
+                        key={callIndex}
+                        direction="row"
+                        spacing={1}
+                        sx={{ alignItems: "center" }}
+                      >
+                        <Chip
+                          size="small"
+                          label={result.status}
+                          color={statusColor[result.status]}
+                        />
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontFamily: "monospace",
+                            wordBreak: "break-all",
+                          }}
+                        >
+                          {formatCall(result)}
+                          {result.error && `: ${result.error}`}
+                        </Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                )}
+            </Box>
+          ))}
+        </Stack>
+        {running && !pending && <LinearProgress sx={{ mt: 2 }} />}
 
-      {pending && (
-        <div className="pending">
-          <span>
-            Run <code>{pending.call.name}</code>
-            <code>{JSON.stringify(pending.call.arguments)}</code>?
-          </span>
-          <button type="button" onClick={() => decide(true)}>
-            Approve
-          </button>
-          <button type="button" onClick={() => decide(false)}>
-            Reject
-          </button>
-        </div>
-      )}
-
-      <form className="goal-form" onSubmit={submit}>
-        <input
-          value={goal}
-          onChange={(event) => setGoal(event.target.value)}
-          placeholder="e.g. add milk and bread"
-          disabled={!session}
-        />
-        {running ? (
-          <button type="button" onClick={stop}>
-            Stop
-          </button>
-        ) : (
-          <button type="submit" disabled={!session || !goal.trim()}>
-            Send
-          </button>
+        {pending && (
+          <Alert
+            severity="warning"
+            sx={{ mt: 2 }}
+            action={
+              <Stack direction="row" spacing={1}>
+                <Button
+                  color="success"
+                  size="small"
+                  onClick={() => decide(true)}
+                >
+                  Approve
+                </Button>
+                <Button
+                  color="error"
+                  size="small"
+                  onClick={() => decide(false)}
+                >
+                  Reject
+                </Button>
+              </Stack>
+            }
+          >
+            Run{" "}
+            <Box component="code" sx={{ wordBreak: "break-all" }}>
+              {formatCall(pending.call)}
+            </Box>
+            ?
+          </Alert>
         )}
-      </form>
-    </section>
+      </CardContent>
+
+      <CardActions sx={{ px: 2, pb: 2 }}>
+        <Stack
+          component="form"
+          direction="row"
+          spacing={1}
+          onSubmit={submit}
+          sx={{ width: "100%" }}
+        >
+          <TextField
+            fullWidth
+            size="small"
+            value={goal}
+            onChange={(event) => setGoal(event.target.value)}
+            placeholder="e.g. add milk and bread"
+            disabled={!session}
+          />
+          {running ? (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<StopIcon />}
+              onClick={stop}
+            >
+              Stop
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              variant="contained"
+              endIcon={<SendIcon />}
+              disabled={!session || !goal.trim()}
+            >
+              Send
+            </Button>
+          )}
+        </Stack>
+      </CardActions>
+    </Card>
   );
 };
 

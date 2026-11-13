@@ -29,8 +29,8 @@ functions to call, executes them and loops until the goal is reached.
     `package.json`), and `dev`, `build` and `typecheck` scripts. Examples import `browser-assistant` from
     `src/` through a Vite alias (and `paths` in their `tsconfig.json`), never from npm: the
     `browser-assistant` name on the npm registry belongs to another package.
--   `examples/todo-list/`: React + Vite todo app. It includes a rule based demo `LanguageModel` to test
-    the UI in browsers without the Prompt API.
+-   `examples/todo-list/`: React + MUI + Vite todo app. It includes a rule based demo `LanguageModel` to
+    test the UI in browsers without the Prompt API.
 
 ## Technology Stack
 
@@ -39,7 +39,8 @@ functions to call, executes them and loops until the goal is reached.
 -   **Vitest** with v8 coverage for tests.
 -   **Biome** for linting and formatting.
 -   **npm workspaces** for the examples.
--   **React** for the examples only (never a dependency of the library).
+-   **React** and **MUI** (`@mui/material`, `@mui/icons-material`, Emotion) for the examples only (never a
+    dependency of the library).
 -   Keep this `AGENTS.md` technology stack section up to date whenever the project tech stack changes.
 
 ## Development Workflow

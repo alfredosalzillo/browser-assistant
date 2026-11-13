@@ -202,8 +202,8 @@ npm run examples:build # builds every example
 
 ### Todo list
 
-A React todo app driven by multiple assistant sessions, in [`examples/todo-list`](./examples/todo-list).
-Open the printed URL. The example shows:
+A React + [MUI](https://mui.com/material-ui/) todo app driven by multiple assistant sessions, in
+[`examples/todo-list`](./examples/todo-list). Open the printed URL. The example shows:
 
 - a shared todo list, changed both by the UI and by the assistants,
 - multiple assistant sessions side by side, created from two presets: a **Todo manager** with all the
