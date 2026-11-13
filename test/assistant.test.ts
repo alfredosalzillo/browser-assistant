@@ -1,4 +1,4 @@
-import { AssistantResponseError, createAssistantSession } from "../src/session";
+import { Assistant, AssistantResponseError } from "../src/assistant";
 import { defineTool } from "../src/tools";
 import type { AnyTool } from "../src/types";
 import { createMockLanguageModel } from "./mocks/languageModel";
@@ -42,13 +42,107 @@ const calls = (...items: [string, Record<string, unknown>][]) => ({
 });
 const final = (message: string) => ({ type: "final", message });
 
-describe("createAssistantSession", () => {
-  afterEach(() => {
+const listAssistants = async () => {
+  const assistants: Assistant[] = [];
+  for await (const assistant of Assistant.listSessions())
+    assistants.push(assistant);
+  return assistants;
+};
+
+describe("Assistant", () => {
+  afterEach(async () => {
     vi.unstubAllGlobals();
+    for await (const assistant of Assistant.listSessions()) assistant.destroy();
+  });
+
+  it("creates an Assistant instance with a Promise", async () => {
+    const { tools } = createTodoTools();
+    const promise = Assistant.createSession({
+      tools,
+      languageModel: createMockLanguageModel(),
+    });
+
+    expect(promise).toBeInstanceOf(Promise);
+    const assistant = await promise;
+    expect(assistant).toBeInstanceOf(Assistant);
+    expect(typeof assistant.id).toBe("string");
+    expect(assistant.tools).toEqual(tools);
+    expect(assistant.tools).not.toBe(tools);
+    expect(assistant.history).toEqual([]);
+  });
+
+  it("lists the live assistants in creation order", async () => {
+    const languageModel = createMockLanguageModel();
+    await expect(listAssistants()).resolves.toEqual([]);
+
+    const first = await Assistant.createSession({ languageModel });
+    const second = await Assistant.createSession({ languageModel });
+    const third = await Assistant.createSession({ languageModel });
+
+    await expect(listAssistants()).resolves.toEqual([first, second, third]);
+  });
+
+  it("excludes the destroyed assistants from listSessions", async () => {
+    const languageModel = createMockLanguageModel();
+    const first = await Assistant.createSession({ languageModel });
+    const second = await Assistant.createSession({ languageModel });
+    const third = await Assistant.createSession({ languageModel });
+
+    second.destroy();
+    await expect(listAssistants()).resolves.toEqual([first, third]);
+
+    first.destroy();
+    third.destroy();
+    await expect(listAssistants()).resolves.toEqual([]);
+  });
+
+  it("skips the assistants destroyed while iterating listSessions", async () => {
+    const languageModel = createMockLanguageModel();
+    const first = await Assistant.createSession({ languageModel });
+    const second = await Assistant.createSession({ languageModel });
+    const yielded: Assistant[] = [];
+
+    for await (const assistant of Assistant.listSessions()) {
+      yielded.push(assistant);
+      second.destroy();
+    }
+
+    expect(yielded).toEqual([first]);
+  });
+
+  it("returns an async iterator from listSessions", async () => {
+    const assistant = await Assistant.createSession({
+      languageModel: createMockLanguageModel(),
+    });
+    const iterator = Assistant.listSessions();
+
+    expect(iterator[Symbol.asyncIterator]()).toBe(iterator);
+    await expect(iterator.next()).resolves.toEqual({
+      done: false,
+      value: assistant,
+    });
+    await expect(iterator.next()).resolves.toEqual({
+      done: true,
+      value: undefined,
+    });
+  });
+
+  it("does not list an assistant whose creation failed", async () => {
+    const languageModel = createMockLanguageModel();
+    const controller = new AbortController();
+    controller.abort(new Error("stop"));
+    languageModel.create = async () => {
+      throw controller.signal.reason;
+    };
+
+    await expect(
+      Assistant.createSession({ languageModel, signal: controller.signal }),
+    ).rejects.toThrow("stop");
+    await expect(listAssistants()).resolves.toEqual([]);
   });
 
   it("throws when LanguageModel is not supported", async () => {
-    await expect(createAssistantSession()).rejects.toThrow(
+    await expect(Assistant.createSession()).rejects.toThrow(
       "LanguageModel is not supported in this browser",
     );
   });
@@ -56,7 +150,7 @@ describe("createAssistantSession", () => {
   it("throws on invalid tools", async () => {
     const { tools } = createTodoTools();
     await expect(
-      createAssistantSession({
+      Assistant.createSession({
         tools: [...tools, tools[0]],
         languageModel: createMockLanguageModel(),
       }),
@@ -68,7 +162,7 @@ describe("createAssistantSession", () => {
     const languageModel = createMockLanguageModel();
     const monitor = vi.fn();
     vi.stubGlobal("LanguageModel", languageModel);
-    await createAssistantSession({
+    await Assistant.createSession({
       tools,
       instructions: "Manage todos",
       monitor,
@@ -97,7 +191,7 @@ describe("createAssistantSession", () => {
     const onStep = vi.fn();
     const onToolCall = vi.fn();
     const onToolResult = vi.fn();
-    const session = await createAssistantSession({
+    const session = await Assistant.createSession({
       tools,
       languageModel,
       onStep,
@@ -143,7 +237,7 @@ describe("createAssistantSession", () => {
       calls(["removeTodo", { id: 9 }], ["addTodo", { name: "x" }]),
       final("Could not do it"),
     ]);
-    const session = await createAssistantSession({ tools, languageModel });
+    const session = await Assistant.createSession({ tools, languageModel });
 
     const result = await session.run("remove todo 9");
 
@@ -173,7 +267,7 @@ describe("createAssistantSession", () => {
       final("Rejected"),
     ]);
     const onBeforeCall = vi.fn(async () => false);
-    const session = await createAssistantSession({
+    const session = await Assistant.createSession({
       tools,
       languageModel,
       onBeforeCall,
@@ -191,7 +285,7 @@ describe("createAssistantSession", () => {
 
   it("retries once when the model answers with invalid JSON", async () => {
     const languageModel = createMockLanguageModel(["oops", final("Done")]);
-    const session = await createAssistantSession({ languageModel });
+    const session = await Assistant.createSession({ languageModel });
 
     const result = await session.run("hello");
 
@@ -203,7 +297,7 @@ describe("createAssistantSession", () => {
 
   it("throws an AssistantResponseError after the retries", async () => {
     const languageModel = createMockLanguageModel(["oops", "still oops"]);
-    const session = await createAssistantSession({ languageModel });
+    const session = await Assistant.createSession({ languageModel });
 
     const error = await session.run("hello").catch((e) => e);
 
@@ -218,7 +312,7 @@ describe("createAssistantSession", () => {
       calls(["addTodo", { title: "b" }]),
       calls(["addTodo", { title: "c" }]),
     ]);
-    const session = await createAssistantSession({
+    const session = await Assistant.createSession({
       tools,
       languageModel,
       maxSteps: 3,
@@ -232,7 +326,7 @@ describe("createAssistantSession", () => {
 
   it("aborts a run with the signal", async () => {
     const languageModel = createMockLanguageModel([final("never")]);
-    const session = await createAssistantSession({ languageModel });
+    const session = await Assistant.createSession({ languageModel });
     const controller = new AbortController();
     controller.abort(new Error("stop"));
 
@@ -253,7 +347,7 @@ describe("createAssistantSession", () => {
       calls(["ping", {}]),
       final("pong"),
     ]);
-    const session = await createAssistantSession({
+    const session = await Assistant.createSession({
       tools: [tool],
       languageModel,
     });
@@ -269,7 +363,7 @@ describe("createAssistantSession", () => {
 
   it("prevents concurrent runs and runs after destroy", async () => {
     const languageModel = createMockLanguageModel([final("a"), final("b")]);
-    const session = await createAssistantSession({ languageModel });
+    const session = await Assistant.createSession({ languageModel });
 
     const first = session.run("a");
     await expect(session.run("b")).rejects.toThrow(
@@ -281,7 +375,7 @@ describe("createAssistantSession", () => {
     session.destroy();
     expect(languageModel.sessions[0].destroyed).toBe(true);
     await expect(session.run("c")).rejects.toThrow(
-      "The assistant session is destroyed",
+      "The assistant is destroyed",
     );
   });
 
@@ -290,8 +384,8 @@ describe("createAssistantSession", () => {
       final("first"),
       final("second"),
     ]);
-    const first = await createAssistantSession({ languageModel });
-    const second = await createAssistantSession({ languageModel });
+    const first = await Assistant.createSession({ languageModel });
+    const second = await Assistant.createSession({ languageModel });
 
     expect(first.id).not.toBe(second.id);
     await expect(first.run("one")).resolves.toMatchObject({

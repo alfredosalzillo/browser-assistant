@@ -14,7 +14,8 @@ back to the model and repeats until the goal is reached.
 
 ## Features
 
-- Multiple independent assistant sessions, each with its own tools, instructions and history.
+- Multiple independent assistants, each with its own tools, instructions and history, created with
+  `Assistant.createSession` and listed with `Assistant.listSessions`.
 - Tools described with a name, a description and a JSON Schema for the arguments.
 - Model output constrained with `responseConstraint` (JSON Schema) **and** validated by the library, with
   automatic retry on malformed answers.
@@ -38,10 +39,7 @@ npm install @alfredo.salzillo/browser-assistant
 ## Usage
 
 ```ts
-import {
-  createAssistantSession,
-  defineTool,
-} from "@alfredo.salzillo/browser-assistant";
+import { Assistant, defineTool } from "@alfredo.salzillo/browser-assistant";
 
 const todos: string[] = [];
 
@@ -69,29 +67,37 @@ const listTodos = defineTool({
   execute: () => todos,
 });
 
-const session = await createAssistantSession({
+const assistant = await Assistant.createSession({
   tools: [addTodo, listTodos],
   instructions: "You manage the user's todo list.",
   onBeforeCall: (call) => confirm(`Run ${call.name}?`),
   onStep: (step) => console.log(step),
 });
 
-const result = await session.run("Add milk and bread to my list");
+const result = await assistant.run("Add milk and bread to my list");
 
 console.log(result.status); // "completed" | "max-steps"
 console.log(result.message); // final message of the assistant
 console.log(result.steps); // every model response with the executed calls
 
-session.destroy();
+assistant.destroy();
 ```
 
 ### Multiple sessions
 
-Every call to `createAssistantSession` creates an independent `LanguageModel` session:
+Every call to `Assistant.createSession` creates an independent assistant backed by its own `LanguageModel`
+session. `Assistant.listSessions()` is an async iterator over the live assistants (created and not destroyed),
+in creation order:
 
 ```ts
-const todoAssistant = await createAssistantSession({ tools: todoTools });
-const pageAssistant = await createAssistantSession({ tools: pageTools });
+const todoAssistant = await Assistant.createSession({ tools: todoTools });
+const pageAssistant = await Assistant.createSession({ tools: pageTools });
+
+for await (const assistant of Assistant.listSessions()) {
+  console.log(assistant.id); // todoAssistant, then pageAssistant
+}
+
+todoAssistant.destroy(); // no longer listed
 ```
 
 ### Availability
@@ -109,7 +115,7 @@ if (!isSupported()) {
 const status = await availability(); // "unavailable" | "downloadable" | "downloading" | "available"
 ```
 
-Download progress can be followed with the `monitor` option of `createAssistantSession`.
+Download progress can be followed with the `monitor` option of `Assistant.createSession`.
 
 ## Response protocol
 
@@ -152,7 +158,9 @@ A call `status` is `success`, `error` (the tool threw or the arguments are inval
 
 ## API
 
-### `createAssistantSession(options)`
+### `Assistant.createSession(options)`
+
+Creates a new assistant and resolves to an `Assistant` instance (the constructor is private).
 
 | Option                 | Type                                          | Default                    | Description                                               |
 | ---------------------- | --------------------------------------------- | -------------------------- | --------------------------------------------------------- |
@@ -169,23 +177,29 @@ A call `status` is `success`, `error` (the tool threw or the arguments are inval
 | `languageModelOptions` | `LanguageModelCreateOptions`                  | `undefined`                | Extra options forwarded to `LanguageModel.create`.        |
 | `languageModel`        | `LanguageModelStatic`                         | `globalThis.LanguageModel` | Custom `LanguageModel` implementation (useful for tests). |
 
-Returns an `AssistantSession`:
+Returns a `Promise<Assistant>`. An `Assistant` has:
 
-- `id`: unique id of the session,
-- `tools`: the tools of the session,
+- `id`: unique id of the assistant,
+- `tools`: the tools of the assistant,
 - `history`: all the steps of all the runs,
 - `run(goal, { signal?, maxSteps? })`: runs the agentic loop and resolves to `{ status, message, steps }`,
-- `destroy()`: destroys the underlying `LanguageModel` session.
+- `destroy()`: destroys the underlying `LanguageModel` session and removes the assistant from
+  `Assistant.listSessions()`.
 
 `run` rejects with an `AssistantResponseError` when the model keeps answering with invalid JSON after
 `maxRetries` retries, and with the abort reason when the run `signal` is aborted.
+
+### `Assistant.listSessions()`
+
+Returns an `AsyncIterableIterator<Assistant>` yielding the live assistants (created and not
+destroyed) in creation order. Assistants destroyed while iterating are skipped.
 
 ### Modules
 
 | Import                                              | Content                                                                                |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `@alfredo.salzillo/browser-assistant`               | Everything below.                                                                      |
-| `@alfredo.salzillo/browser-assistant/session`       | `createAssistantSession`, `AssistantResponseError`.                                    |
+| `@alfredo.salzillo/browser-assistant/assistant`     | `Assistant`, `AssistantResponseError`.                                                 |
 | `@alfredo.salzillo/browser-assistant/tools`         | `defineTool`, `assertValidTools`.                                                      |
 | `@alfredo.salzillo/browser-assistant/protocol`      | `buildInstructions`, `buildResponseSchema`, `parseResponse` and the prompt formatters. |
 | `@alfredo.salzillo/browser-assistant/schema`        | `validateSchema` (JSON Schema subset validator).                                       |

@@ -36,7 +36,7 @@ export type JSONSchema = {
 };
 
 export type ToolContext = {
-  /** id of the assistant session running the tool */
+  /** id of the assistant running the tool */
   sessionId: string;
   /** abort signal of the current run */
   signal?: AbortSignal;
@@ -56,7 +56,7 @@ export type Tool<Args = Record<string, unknown>, Result = unknown> = {
   execute: (args: Args, context: ToolContext) => Result | Promise<Result>;
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: tools with any arguments are accepted by a session
+// biome-ignore lint/suspicious/noExplicitAny: tools with any arguments are accepted by an assistant
 export type AnyTool = Tool<any, unknown>;
 
 export type ToolCall = {
@@ -110,7 +110,10 @@ export type RunOptions = {
   maxSteps?: number;
 };
 
-export type AssistantSessionOptions = {
+/**
+ * Options of `Assistant.createSession`.
+ */
+export type AssistantOptions = {
   tools?: AnyTool[];
   instructions?: string;
   maxSteps?: number;
@@ -126,12 +129,4 @@ export type AssistantSessionOptions = {
     "initialPrompts" | "monitor" | "signal"
   >;
   languageModel?: LanguageModelStatic;
-};
-
-export type AssistantSession = {
-  readonly id: string;
-  readonly tools: readonly AnyTool[];
-  readonly history: readonly Step[];
-  run(goal: string, options?: RunOptions): Promise<RunResult>;
-  destroy(): void;
 };

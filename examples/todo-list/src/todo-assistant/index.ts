@@ -1,7 +1,6 @@
 import {
-  type AssistantSession,
-  type AssistantSessionOptions,
-  createAssistantSession,
+  Assistant,
+  type AssistantOptions,
 } from "@alfredo.salzillo/browser-assistant";
 import type { TodoStore } from "../todoStore";
 import { createTodoTools } from "./todoTools";
@@ -40,7 +39,7 @@ export const todoAssistantPresets: TodoAssistantPreset[] = [
 ];
 
 export type CreateTodoAssistantOptions = Omit<
-  AssistantSessionOptions,
+  AssistantOptions,
   "tools" | "instructions"
 > & {
   store: TodoStore;
@@ -48,15 +47,15 @@ export type CreateTodoAssistantOptions = Omit<
 };
 
 /**
- * createTodoAssistant creates a new assistant session that manages the todos of the store, with the
- * tools and the instructions of the preset.
+ * createTodoAssistant creates a new assistant that manages the todos of the store, with the tools
+ * and the instructions of the preset.
  */
 export const createTodoAssistant = ({
   store,
   preset,
   ...options
-}: CreateTodoAssistantOptions): Promise<AssistantSession> =>
-  createAssistantSession({
+}: CreateTodoAssistantOptions): Promise<Assistant> =>
+  Assistant.createSession({
     ...options,
     tools: createTodoTools(store).filter((tool) =>
       preset.toolNames.includes(tool.name),

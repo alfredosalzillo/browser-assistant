@@ -17,6 +17,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./assistant": {
+      "types": "./dist/assistant.d.ts",
+      "import": "./dist/assistant.js"
+    },
     "./availability": {
       "types": "./dist/availability.d.ts",
       "import": "./dist/availability.js"
@@ -32,10 +36,6 @@
     "./schema": {
       "types": "./dist/schema.d.ts",
       "import": "./dist/schema.js"
-    },
-    "./session": {
-      "types": "./dist/session.d.ts",
-      "import": "./dist/session.js"
     },
     "./tools": {
       "types": "./dist/tools.d.ts",

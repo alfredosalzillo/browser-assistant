@@ -1,5 +1,5 @@
 import type {
-  AssistantSession,
+  Assistant,
   Step,
   ToolCall,
   ToolResultStatus,
@@ -80,7 +80,7 @@ const AssistantChat = ({
   onGoal,
   onRunningChange,
 }: AssistantChatProps) => {
-  const [session, setSession] = useState<AssistantSession>();
+  const [session, setSession] = useState<Assistant>();
   const [error, setError] = useState<string>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [goal, setGoal] = useState("");
@@ -109,7 +109,7 @@ const AssistantChat = ({
   };
 
   useEffect(() => {
-    let created: AssistantSession | undefined;
+    let created: Assistant | undefined;
     let cancelled = false;
     createTodoAssistant({
       store,
