@@ -13,6 +13,7 @@ functions to call, executes them and loops until the goal is reached.
 
 -   Install dependencies: `npm install`
 -   Build the project: `npm run build`
+-   Build examples for GitHub Pages: `npm run examples:build && npm run examples:pages`
 -   Run tests: `npm test`
 -   Run lint checks: `npm run lint`
 -   Run type checks (library, tests and examples): `npm run typecheck`
@@ -28,7 +29,8 @@ functions to call, executes them and loops until the goal is reached.
     example has its own `package.json` with its own dependencies (never add them to the root
     `package.json`), and `dev`, `build` and `typecheck` scripts. Examples import
     `@alfredo.salzillo/browser-assistant` from `src/` through a Vite alias (and `paths` in their
-    `tsconfig.json`), never from npm, so no library build is needed.
+    `tsconfig.json`), never from npm, so no library build is needed. Every new example must also be
+    listed in `README.md` with its GitHub Pages link.
 -   `examples/todo-list/`: React + MUI + Vite todo app. It requires a browser with the built-in Prompt API;
     unsupported browsers see a notice in the assistant panel.
 
@@ -51,6 +53,8 @@ functions to call, executes them and loops until the goal is reached.
 4.  **Validate**: Run relevant tests with `npm test` when behavior changes.
 5.  **Code Style**: Follow the existing style and naming patterns in the codebase.
 6.  **GitHub Workflows**: To test workflows locally, use [`act`](https://nektosact.com/).
+7.  **Examples delivery**: `.github/workflows/cd.yml` builds and deploys examples to GitHub Pages on
+    pushes to `main`; `npm run examples:pages` collects each built example and creates the landing page.
 
 ## Temporary Files
 

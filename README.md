@@ -195,6 +195,10 @@ Returns an `AssistantSession`:
 
 ## Examples
 
+Live demos are published on [GitHub Pages](https://alfredosalzillo.github.io/browser-assistant/).
+Each example has its own link below. The site is rebuilt and deployed automatically on every push to
+`main`; configure the repository's Pages source as **GitHub Actions** to enable deployment.
+
 The examples live in [`examples/`](./examples). Each one is an independent package with its own
 `package.json` and dependencies, so the library itself never depends on them. They are
 [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces) of the root package: a single
@@ -210,7 +214,8 @@ npm run examples:build # builds every example
 ### Todo list
 
 A React + [MUI](https://mui.com/material-ui/) todo app driven by multiple assistant sessions, in
-[`examples/todo-list`](./examples/todo-list). Open the printed URL. The example shows:
+[`examples/todo-list`](./examples/todo-list), with a [live demo](https://alfredosalzillo.github.io/browser-assistant/todo-list/).
+Open the printed URL. The example shows:
 
 - a full width todo list in the center, changed both by the UI and by the assistants,
 - an agentic chat column on the right (the `AssistantPanel` component, which owns the presets and the
@@ -233,7 +238,9 @@ Build a static version with `npm run build --workspace examples/todo-list` (outp
 
 Create a new `examples/<name>` directory with its own `package.json` (with `dev`, `build` and
 `typecheck` scripts), a `vite.config.ts` aliasing `@alfredo.salzillo/browser-assistant` to `../../src` and a
-`tsconfig.json` with the matching `paths`. Run `npm install` in the root to link it.
+`tsconfig.json` with the matching `paths`. Run `npm install` in the root to link it. Add the example
+to this README with its GitHub Pages link; the continuous delivery workflow builds and publishes
+every example that has a `dist` directory.
 
 ## Development
 
