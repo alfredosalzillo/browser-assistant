@@ -158,6 +158,7 @@ A call `status` is `success`, `error` (the tool threw or the arguments are inval
 | `onToolCall`           | `(call) => void`                              | `undefined`                | Called before a tool runs.                                |
 | `onToolResult`         | `(result) => void`                            | `undefined`                | Called after a tool runs.                                 |
 | `monitor`              | `(monitor) => void`                           | `undefined`                | Forwarded to `LanguageModel.create` (download progress).  |
+| `signal`               | `AbortSignal`                                 | `undefined`                | Aborts the creation of the `LanguageModel` session.       |
 | `languageModelOptions` | `LanguageModelCreateOptions`                  | `undefined`                | Extra options forwarded to `LanguageModel.create`.        |
 | `languageModel`        | `LanguageModelStatic`                         | `globalThis.LanguageModel` | Custom `LanguageModel` implementation (useful for tests). |
 
@@ -169,18 +170,21 @@ Returns an `AssistantSession`:
 - `run(goal, { signal?, maxSteps? })`: runs the agentic loop and resolves to `{ status, message, steps }`,
 - `destroy()`: destroys the underlying `LanguageModel` session.
 
+`run` rejects with an `AssistantResponseError` when the model keeps answering with invalid JSON after
+`maxRetries` retries, and with the abort reason when the run `signal` is aborted.
+
 ### Modules
 
-| Import                            | Content                                                      |
-| --------------------------------- | ------------------------------------------------------------ |
-| `browser-assistant`               | Everything below.                                            |
-| `browser-assistant/session`       | `createAssistantSession`.                                    |
-| `browser-assistant/tools`         | `defineTool`, `assertValidTools`.                            |
-| `browser-assistant/protocol`      | `buildInstructions`, `buildResponseSchema`, `parseResponse`. |
-| `browser-assistant/schema`        | `validateSchema` (JSON Schema subset validator).             |
-| `browser-assistant/availability`  | `isSupported`, `availability`.                               |
-| `browser-assistant/languageModel` | `getLanguageModel` and the `LanguageModel` types.            |
-| `browser-assistant/types`         | Public types.                                                |
+| Import                            | Content                                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------- |
+| `browser-assistant`               | Everything below.                                                                      |
+| `browser-assistant/session`       | `createAssistantSession`, `AssistantResponseError`.                                    |
+| `browser-assistant/tools`         | `defineTool`, `assertValidTools`.                                                      |
+| `browser-assistant/protocol`      | `buildInstructions`, `buildResponseSchema`, `parseResponse` and the prompt formatters. |
+| `browser-assistant/schema`        | `validateSchema` (JSON Schema subset validator).                                       |
+| `browser-assistant/availability`  | `isSupported`, `availability`.                                                         |
+| `browser-assistant/languageModel` | `getLanguageModel` and the `LanguageModel` types.                                      |
+| `browser-assistant/types`         | Public types.                                                                          |
 
 ## Example
 
