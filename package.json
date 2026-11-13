@@ -88,7 +88,7 @@
   "description": "Modular library to build agentic assistants in the browser with the built-in LanguageModel (Prompt API).",
   "devDependencies": {
     "@biomejs/biome": "^2.6.7",
-    "@types/node": "^25.9.1",
+    "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^4.1.7",
     "modular-library": "^0.0.6",
     "typescript": "^6.0.3",
