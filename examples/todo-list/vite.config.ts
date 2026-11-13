@@ -6,6 +6,7 @@ const src = resolve(import.meta.dirname, "../../src");
 
 export default defineConfig({
   root: import.meta.dirname,
+  base: "./",
   plugins: [react()],
   resolve: {
     alias: [

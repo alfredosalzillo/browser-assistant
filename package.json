@@ -54,6 +54,7 @@
     "typecheck": "tsc --noEmit -p . && npm run typecheck --workspaces --if-present",
     "example:todo-list": "npm run dev --workspace examples/todo-list",
     "examples:build": "npm run build --workspaces --if-present",
+    "examples:pages": "node scripts/examples-pages.mjs",
     "check-exports": "modular-library check",
     "prepare": "npm run build && npm run lint && npm run check-exports"
   },
