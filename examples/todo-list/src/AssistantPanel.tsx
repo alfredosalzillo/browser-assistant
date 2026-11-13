@@ -1,10 +1,8 @@
-import {
-  type AnyTool,
-  type AssistantSession,
-  createAssistantSession,
-  type Step,
-  type ToolCall,
-  type ToolResultStatus,
+import type {
+  AssistantSession,
+  Step,
+  ToolCall,
+  ToolResultStatus,
 } from "@alfredo.salzillo/browser-assistant";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
@@ -34,14 +32,11 @@ import {
   useRef,
   useState,
 } from "react";
-
-export type AssistantPreset = {
-  id: string;
-  label: string;
-  instructions: string;
-  toolNames: string[];
-  suggestions: string[];
-};
+import {
+  createTodoAssistant,
+  type TodoAssistantPreset,
+} from "./todo-assistant";
+import type { TodoStore } from "./todoStore";
 
 type Message =
   | { kind: "goal"; text: string }
@@ -55,8 +50,8 @@ type PendingCall = {
 };
 
 type AssistantPanelProps = {
-  preset: AssistantPreset;
-  tools: AnyTool[];
+  store: TodoStore;
+  preset: TodoAssistantPreset;
   onGoal?: (goal: string) => void;
   onRunningChange?: (running: boolean) => void;
 };
@@ -80,8 +75,8 @@ const AssistantMessage = ({ children }: { children: ReactNode }) => (
 );
 
 const AssistantPanel = ({
+  store,
   preset,
-  tools,
   onGoal,
   onRunningChange,
 }: AssistantPanelProps) => {
@@ -116,9 +111,9 @@ const AssistantPanel = ({
   useEffect(() => {
     let created: AssistantSession | undefined;
     let cancelled = false;
-    createAssistantSession({
-      tools: tools.filter((tool) => preset.toolNames.includes(tool.name)),
-      instructions: preset.instructions,
+    createTodoAssistant({
+      store,
+      preset,
       onBeforeCall: (call) =>
         requireApprovalRef.current
           ? new Promise<boolean>((resolve) => {
@@ -141,7 +136,7 @@ const AssistantPanel = ({
       pendingRef.current?.resolve(false);
       created?.destroy();
     };
-  }, [preset, tools]);
+  }, [store, preset]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();

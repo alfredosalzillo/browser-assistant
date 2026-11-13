@@ -1,5 +1,5 @@
 import { type AnyTool, defineTool } from "@alfredo.salzillo/browser-assistant";
-import type { TodoStore } from "./todoStore";
+import type { TodoStore } from "../todoStore";
 
 const idParameter = {
   type: "integer",

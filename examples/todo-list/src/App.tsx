@@ -29,36 +29,14 @@ import {
   Typography,
   useColorScheme,
 } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
-import AssistantPanel, { type AssistantPreset } from "./AssistantPanel";
+import { useEffect, useState } from "react";
+import AssistantPanel from "./AssistantPanel";
 import TodoList from "./TodoList";
+import {
+  todoAssistantPresets as presets,
+  type TodoAssistantPreset,
+} from "./todo-assistant";
 import { createTodoStore } from "./todoStore";
-import { createTodoTools } from "./todoTools";
-
-const presets: AssistantPreset[] = [
-  {
-    id: "manager",
-    label: "Todo manager",
-    instructions:
-      "You manage the todo list of the user. Read the list with listTodos before changing todos by id.",
-    toolNames: [
-      "listTodos",
-      "addTodo",
-      "toggleTodo",
-      "removeTodo",
-      "clearCompleted",
-    ],
-    suggestions: ["add milk and bread", "complete 1", "clear"],
-  },
-  {
-    id: "reviewer",
-    label: "Read-only reviewer",
-    instructions:
-      "You can only read the todo list. Summarize it and suggest priorities, never pretend to change it.",
-    toolNames: ["listTodos"],
-    suggestions: ["list"],
-  },
-];
 
 const availabilityColor = {
   available: "success.main",
@@ -69,7 +47,7 @@ const availabilityColor = {
 
 type Panel = {
   key: number;
-  preset: AssistantPreset;
+  preset: TodoAssistantPreset;
   title?: string;
   running: boolean;
 };
@@ -77,7 +55,6 @@ type Panel = {
 const store = createTodoStore(["Try the browser-assistant example"]);
 
 const App = () => {
-  const tools = useMemo(() => createTodoTools(store), []);
   const { mode, systemMode, setMode } = useColorScheme();
   const [status, setStatus] = useState<LanguageModelAvailability>();
   const [panels, setPanels] = useState<Panel[]>([
@@ -108,7 +85,7 @@ const App = () => {
       ),
     );
 
-  const addPanel = (preset: AssistantPreset) => {
+  const addPanel = (preset: TodoAssistantPreset) => {
     const key = Math.max(0, ...panels.map((panel) => panel.key)) + 1;
     setPanels((current) => [...current, { key, preset, running: false }]);
     setActiveKey(key);
@@ -395,8 +372,8 @@ const App = () => {
                 }}
               >
                 <AssistantPanel
+                  store={store}
                   preset={panel.preset}
-                  tools={tools}
                   onGoal={(goal) => {
                     if (!panel.title) updatePanel(panel.key, { title: goal });
                   }}
