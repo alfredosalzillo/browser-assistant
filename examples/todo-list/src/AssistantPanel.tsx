@@ -7,33 +7,41 @@ import {
   type ToolCall,
   type ToolResultStatus,
 } from "@alfredo.salzillo/browser-assistant";
-import CloseIcon from "@mui/icons-material/Close";
-import SendIcon from "@mui/icons-material/Send";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 import StopIcon from "@mui/icons-material/Stop";
 import {
   Alert,
+  Avatar,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
-  CardHeader,
   Chip,
+  CircularProgress,
   FormControlLabel,
   IconButton,
-  LinearProgress,
+  InputBase,
+  Paper,
   Stack,
   Switch,
-  TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 export type AssistantPreset = {
   id: string;
   label: string;
   instructions: string;
   toolNames: string[];
+  suggestions: string[];
 };
 
 type Message =
@@ -48,11 +56,11 @@ type PendingCall = {
 };
 
 type AssistantPanelProps = {
-  title: string;
   preset: AssistantPreset;
   tools: AnyTool[];
   languageModel?: LanguageModelStatic;
-  onClose: () => void;
+  onGoal?: (goal: string) => void;
+  onRunningChange?: (running: boolean) => void;
 };
 
 const statusColor: Record<ToolResultStatus, "success" | "error" | "warning"> = {
@@ -64,12 +72,21 @@ const statusColor: Record<ToolResultStatus, "success" | "error" | "warning"> = {
 const formatCall = (call: ToolCall) =>
   `${call.name}(${JSON.stringify(call.arguments)})`;
 
+const AssistantMessage = ({ children }: { children: ReactNode }) => (
+  <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+    <Avatar sx={{ width: 28, height: 28, bgcolor: "primary.main" }}>
+      <AutoAwesomeIcon sx={{ fontSize: 16 }} />
+    </Avatar>
+    <Box sx={{ flex: 1, minWidth: 0, pt: 0.5 }}>{children}</Box>
+  </Stack>
+);
+
 const AssistantPanel = ({
-  title,
   preset,
   tools,
   languageModel,
-  onClose,
+  onGoal,
+  onRunningChange,
 }: AssistantPanelProps) => {
   const [session, setSession] = useState<AssistantSession>();
   const [error, setError] = useState<string>();
@@ -92,6 +109,11 @@ const AssistantPanel = ({
   const stop = () => {
     abortRef.current?.abort();
     decide(false);
+  };
+
+  const updateRunning = (value: boolean) => {
+    setRunning(value);
+    onRunningChange?.(value);
   };
 
   useEffect(() => {
@@ -132,7 +154,8 @@ const AssistantPanel = ({
     const controller = new AbortController();
     abortRef.current = controller;
     setGoal("");
-    setRunning(true);
+    updateRunning(true);
+    onGoal?.(text);
     setMessages((current) => [...current, { kind: "goal", text }]);
     try {
       const result = await session.run(text, { signal: controller.signal });
@@ -146,24 +169,51 @@ const AssistantPanel = ({
         { kind: "error", text: String(reason) },
       ]);
     } finally {
-      setRunning(false);
+      updateRunning(false);
       decide(false);
     }
   };
 
+  const submitOnEnter = (
+    event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    if (event.key !== "Enter" || event.shiftKey) return;
+    if (event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    event.currentTarget.form?.requestSubmit();
+  };
+
   return (
-    <Card variant="outlined" sx={{ display: "flex", flexDirection: "column" }}>
-      <CardHeader
-        title={title}
-        subheader={`${preset.label} · tools: ${preset.toolNames.join(", ")}`}
-        action={
-          <IconButton aria-label="Close session" onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
-        }
-      />
-      <CardContent sx={{ flexGrow: 1, pt: 0 }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+      }}
+    >
+      <Stack
+        direction="row"
+        sx={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 1,
+          px: 2,
+          py: 0.5,
+          borderBottom: 1,
+          borderColor: "divider",
+        }}
+      >
+        <Tooltip title={preset.toolNames.join(", ")}>
+          <Chip
+            size="small"
+            variant="outlined"
+            icon={<BuildOutlinedIcon />}
+            label={`${preset.toolNames.length} tools`}
+          />
+        </Tooltip>
         <FormControlLabel
+          sx={{ mr: 0 }}
           control={
             <Switch
               size="small"
@@ -171,13 +221,23 @@ const AssistantPanel = ({
               onChange={(event) => setRequireApproval(event.target.checked)}
             />
           }
-          label="Ask approval before each call"
+          label={<Typography variant="body2">Ask approval</Typography>}
         />
+      </Stack>
 
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column-reverse",
+        }}
+      >
         <Stack
           component="ol"
-          spacing={1}
-          sx={{ listStyle: "none", p: 0, m: 0, mt: 1 }}
+          spacing={2}
+          sx={{ listStyle: "none", m: 0, p: 2, flexGrow: 1 }}
         >
           {error && (
             <Alert component="li" severity="error">
@@ -185,9 +245,51 @@ const AssistantPanel = ({
             </Alert>
           )}
           {!session && !error && (
-            <Typography component="li" color="text.secondary">
-              Creating session…
-            </Typography>
+            <Stack
+              component="li"
+              direction="row"
+              spacing={1}
+              sx={{ alignItems: "center", color: "text.secondary" }}
+            >
+              <CircularProgress size={16} />
+              <Typography variant="body2">Creating session…</Typography>
+            </Stack>
+          )}
+          {session && messages.length === 0 && (
+            <Stack
+              component="li"
+              spacing={2}
+              sx={{
+                flexGrow: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                py: 4,
+              }}
+            >
+              <Avatar sx={{ width: 48, height: 48, bgcolor: "primary.main" }}>
+                <AutoAwesomeIcon />
+              </Avatar>
+              <Box>
+                <Typography variant="h6">{preset.label}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  What should I do with your todos?
+                </Typography>
+              </Box>
+              <Stack
+                direction="row"
+                sx={{ flexWrap: "wrap", gap: 1, justifyContent: "center" }}
+              >
+                {preset.suggestions.map((suggestion) => (
+                  <Chip
+                    key={suggestion}
+                    label={suggestion}
+                    variant="outlined"
+                    onClick={() => setGoal(suggestion)}
+                  />
+                ))}
+              </Stack>
+            </Stack>
           )}
           {messages.map((message, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: messages are append only
@@ -198,74 +300,114 @@ const AssistantPanel = ({
                     ml: "auto",
                     width: "fit-content",
                     maxWidth: "85%",
-                    px: 1.5,
+                    px: 2,
                     py: 1,
-                    borderRadius: 2,
+                    borderRadius: 3,
+                    borderBottomRightRadius: 4,
                     bgcolor: "primary.main",
                     color: "primary.contrastText",
                   }}
                 >
-                  <Typography variant="body2">{message.text}</Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                    {message.text}
+                  </Typography>
                 </Box>
               )}
               {message.kind === "final" && (
-                <Alert
-                  severity={message.status === "completed" ? "info" : "warning"}
-                  icon={false}
-                >
-                  {message.text}
-                  {message.status !== "completed" && ` (${message.status})`}
-                </Alert>
+                <AssistantMessage>
+                  <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                    {message.text}
+                  </Typography>
+                  {message.status !== "completed" && (
+                    <Chip
+                      size="small"
+                      color="warning"
+                      label={message.status}
+                      sx={{ mt: 1 }}
+                    />
+                  )}
+                </AssistantMessage>
               )}
               {message.kind === "error" && (
                 <Alert severity="error">{message.text}</Alert>
               )}
               {message.kind === "step" &&
                 message.step.response.type === "calls" && (
-                  <Stack spacing={0.5}>
+                  <AssistantMessage>
                     <Typography
                       variant="body2"
                       color="text.secondary"
-                      sx={{ fontStyle: "italic" }}
+                      sx={{ fontStyle: "italic", mb: 1 }}
                     >
                       {message.step.response.reasoning}
                     </Typography>
-                    {message.step.results.map((result, callIndex) => (
-                      <Stack
-                        // biome-ignore lint/suspicious/noArrayIndexKey: results never change
-                        key={callIndex}
-                        direction="row"
-                        spacing={1}
-                        sx={{ alignItems: "center" }}
-                      >
-                        <Chip
-                          size="small"
-                          label={result.status}
-                          color={statusColor[result.status]}
-                        />
-                        <Typography
-                          variant="body2"
+                    <Paper variant="outlined" sx={{ overflow: "hidden" }}>
+                      {message.step.results.map((result, callIndex) => (
+                        <Stack
+                          // biome-ignore lint/suspicious/noArrayIndexKey: results never change
+                          key={callIndex}
+                          direction="row"
+                          spacing={1}
                           sx={{
-                            fontFamily: "monospace",
-                            wordBreak: "break-all",
+                            alignItems: "center",
+                            px: 1.5,
+                            py: 1,
+                            "& + &": { borderTop: 1, borderColor: "divider" },
                           }}
                         >
-                          {formatCall(result)}
-                          {result.error && `: ${result.error}`}
-                        </Typography>
-                      </Stack>
-                    ))}
-                  </Stack>
+                          <Chip
+                            size="small"
+                            label={result.status}
+                            color={statusColor[result.status]}
+                            variant="outlined"
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontFamily: "monospace",
+                              wordBreak: "break-all",
+                            }}
+                          >
+                            {formatCall(result)}
+                            {result.error && `: ${result.error}`}
+                          </Typography>
+                        </Stack>
+                      ))}
+                    </Paper>
+                  </AssistantMessage>
                 )}
             </Box>
           ))}
+          {running && !pending && (
+            <Box component="li">
+              <AssistantMessage>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: "center", color: "text.secondary" }}
+                >
+                  <CircularProgress size={14} />
+                  <Typography variant="body2">Thinking…</Typography>
+                </Stack>
+              </AssistantMessage>
+            </Box>
+          )}
         </Stack>
-        {running && !pending && <LinearProgress sx={{ mt: 2 }} />}
+      </Box>
 
+      <Box
+        sx={{
+          flexShrink: 0,
+          borderTop: 1,
+          borderColor: "divider",
+          bgcolor: "background.paper",
+        }}
+      >
         {pending && (
           <Alert
             severity="warning"
-            sx={{ mt: 2 }}
+            square
+            sx={{ borderBottom: 1, borderColor: "divider" }}
             action={
               <Stack direction="row" spacing={1}>
                 <Button
@@ -292,46 +434,66 @@ const AssistantPanel = ({
             ?
           </Alert>
         )}
-      </CardContent>
-
-      <CardActions sx={{ px: 2, pb: 2 }}>
-        <Stack
+        <Box
           component="form"
-          direction="row"
-          spacing={1}
           onSubmit={submit}
-          sx={{ width: "100%" }}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            px: 2,
+            pt: 1.5,
+            pb: 1,
+          }}
         >
-          <TextField
+          <InputBase
+            multiline
             fullWidth
-            size="small"
+            minRows={3}
+            maxRows={10}
             value={goal}
             onChange={(event) => setGoal(event.target.value)}
-            placeholder="e.g. add milk and bread"
+            onKeyDown={submitOnEnter}
+            placeholder={
+              session ? "Ask the assistant…" : "The session is not ready"
+            }
             disabled={!session}
+            inputProps={{ "aria-label": "Prompt" }}
           />
-          {running ? (
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<StopIcon />}
-              onClick={stop}
-            >
-              Stop
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              variant="contained"
-              endIcon={<SendIcon />}
-              disabled={!session || !goal.trim()}
-            >
-              Send
-            </Button>
-          )}
-        </Stack>
-      </CardActions>
-    </Card>
+          <Stack
+            direction="row"
+            sx={{
+              alignItems: "center",
+              justifyContent: "space-between",
+              mt: 0.5,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Enter to send, Shift + Enter for a new line
+            </Typography>
+            {running ? (
+              <Tooltip title="Stop">
+                <IconButton color="error" onClick={stop} aria-label="Stop">
+                  <StopIcon />
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <Tooltip title="Send (Enter)">
+                <span>
+                  <IconButton
+                    type="submit"
+                    color="primary"
+                    aria-label="Send"
+                    disabled={!session || !goal.trim()}
+                  >
+                    <ArrowUpwardIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
+          </Stack>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

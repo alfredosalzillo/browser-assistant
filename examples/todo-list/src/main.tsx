@@ -5,7 +5,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 
 const theme = createTheme({
-  colorSchemes: { dark: true },
+  cssVariables: { colorSchemeSelector: "class" },
+  colorSchemes: { light: true, dark: true },
+  shape: { borderRadius: 10 },
+  typography: { button: { textTransform: "none", fontWeight: 600 } },
 });
 
 const root = document.getElementById("root");

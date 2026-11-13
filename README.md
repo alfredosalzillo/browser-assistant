@@ -212,17 +212,20 @@ npm run examples:build # builds every example
 A React + [MUI](https://mui.com/material-ui/) todo app driven by multiple assistant sessions, in
 [`examples/todo-list`](./examples/todo-list). Open the printed URL. The example shows:
 
-- a shared todo list, changed both by the UI and by the assistants,
-- multiple assistant sessions side by side, created from two presets: a **Todo manager** with all the
-  tools and a **Read-only reviewer** with only `listTodos`,
-- every step of a run (reasoning and calls with their status),
-- an "Ask approval before each call" toggle wired to `onBeforeCall`,
+- a full width todo list in the center, changed both by the UI and by the assistants,
+- an agentic chat column on the right: the **+** button starts a new session from one of two presets
+  (a **Todo manager** with all the tools and a **Read-only reviewer** with only `listTodos`) and the
+  history button lists the sessions to switch between them, each one keeping its own conversation,
+- every step of a run (reasoning and calls with their status), with the prompt fixed at the bottom,
+- an "Ask approval" toggle wired to `onBeforeCall`,
+- a light/dark theme switch,
 - a rule based **demo model** (enabled by default when the built-in `LanguageModel` is missing) that
   speaks the same JSON protocol, to try the UI in any browser. It understands goals like
   `add milk and bread`, `complete 1`, `remove 2`, `clear` and `list`.
 
 To use the real model, open the example in a browser with the Prompt API enabled (for example Chrome with
-`chrome://flags/#prompt-api-for-gemini-nano`) and uncheck the demo model option.
+`chrome://flags/#prompt-api-for-gemini-nano`) and turn off the demo model in the model settings of the
+chat column.
 
 Build a static version with `npm run build --workspace examples/todo-list` (output in
 `examples/todo-list/dist`).
