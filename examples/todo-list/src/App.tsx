@@ -1,3 +1,8 @@
+import {
+  availability,
+  isSupported,
+  type LanguageModelAvailability,
+} from "@alfredo.salzillo/browser-assistant";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
@@ -22,11 +27,6 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import {
-  availability,
-  isSupported,
-  type LanguageModelAvailability,
-} from "browser-assistant";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import AssistantPanel, { type AssistantPreset } from "./AssistantPanel";
 import { demoLanguageModel } from "./demoLanguageModel";

@@ -3,7 +3,7 @@ import type {
   LanguageModelStatic,
   ToolCall,
   ToolResult,
-} from "browser-assistant";
+} from "@alfredo.salzillo/browser-assistant";
 
 type Call = [name: string, args: Record<string, unknown>];
 

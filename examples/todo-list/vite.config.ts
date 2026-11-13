@@ -9,8 +9,14 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: [
-      { find: /^browser-assistant$/, replacement: `${src}/index.ts` },
-      { find: /^browser-assistant\/(.*)$/, replacement: `${src}/$1.ts` },
+      {
+        find: /^@alfredo\.salzillo\/browser-assistant$/,
+        replacement: `${src}/index.ts`,
+      },
+      {
+        find: /^@alfredo\.salzillo\/browser-assistant\/(.*)$/,
+        replacement: `${src}/$1.ts`,
+      },
     ],
   },
   build: {

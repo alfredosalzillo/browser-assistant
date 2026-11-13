@@ -1,4 +1,4 @@
-import { type AnyTool, defineTool } from "browser-assistant";
+import { type AnyTool, defineTool } from "@alfredo.salzillo/browser-assistant";
 import type { TodoStore } from "./todoStore";
 
 const idParameter = {

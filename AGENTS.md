@@ -4,8 +4,8 @@ This file provides context and instructions for AI coding agents working on this
 
 ## Project Overview
 
-`browser-assistant` is a modular browser library that builds agentic assistants on top of the built-in
-`LanguageModel` (Prompt API). A session receives a list of tools (JavaScript functions with a description
+`@alfredo.salzillo/browser-assistant` (`browser-assistant`) is a modular browser library that builds
+agentic assistants on top of the built-in `LanguageModel` (Prompt API). A session receives a list of tools (JavaScript functions with a description
 and a JSON Schema of their arguments), forces the model to answer only with JSON instructions of the
 functions to call, executes them and loops until the goal is reached.
 
@@ -26,9 +26,9 @@ functions to call, executes them and loops until the goal is reached.
 -   `test/`: Vitest unit tests. Tests never run a real model: use the mocked `LanguageModel` in `test/mocks`.
 -   `examples/`: testable UIs, one npm workspace per directory (for example `examples/todo-list`). Each
     example has its own `package.json` with its own dependencies (never add them to the root
-    `package.json`), and `dev`, `build` and `typecheck` scripts. Examples import `browser-assistant` from
-    `src/` through a Vite alias (and `paths` in their `tsconfig.json`), never from npm: the
-    `browser-assistant` name on the npm registry belongs to another package.
+    `package.json`), and `dev`, `build` and `typecheck` scripts. Examples import
+    `@alfredo.salzillo/browser-assistant` from `src/` through a Vite alias (and `paths` in their
+    `tsconfig.json`), never from npm, so no library build is needed.
 -   `examples/todo-list/`: React + MUI + Vite todo app. It includes a rule based demo `LanguageModel` to
     test the UI in browsers without the Prompt API.
 

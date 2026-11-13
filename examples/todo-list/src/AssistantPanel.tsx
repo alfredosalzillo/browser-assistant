@@ -1,3 +1,12 @@
+import {
+  type AnyTool,
+  type AssistantSession,
+  createAssistantSession,
+  type LanguageModelStatic,
+  type Step,
+  type ToolCall,
+  type ToolResultStatus,
+} from "@alfredo.salzillo/browser-assistant";
 import CloseIcon from "@mui/icons-material/Close";
 import SendIcon from "@mui/icons-material/Send";
 import StopIcon from "@mui/icons-material/Stop";
@@ -18,15 +27,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import {
-  type AnyTool,
-  type AssistantSession,
-  createAssistantSession,
-  type LanguageModelStatic,
-  type Step,
-  type ToolCall,
-  type ToolResultStatus,
-} from "browser-assistant";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
 export type AssistantPreset = {

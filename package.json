@@ -1,7 +1,10 @@
 {
-  "name": "browser-assistant",
+  "name": "@alfredo.salzillo/browser-assistant",
   "version": "0.0.1",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "files": [
     "dist"

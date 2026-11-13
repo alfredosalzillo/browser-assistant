@@ -1,5 +1,6 @@
 # browser-assistant
 
+![npm version](https://img.shields.io/npm/v/@alfredo.salzillo/browser-assistant)
 ![node version](https://img.shields.io/badge/node-%3E%3D22-blue)
 ![license](https://img.shields.io/github/license/alfredosalzillo/browser-assistant)
 
@@ -31,13 +32,16 @@ back to the model and repeats until the goal is reached.
 ## Installation
 
 ```bash
-npm install browser-assistant
+npm install @alfredo.salzillo/browser-assistant
 ```
 
 ## Usage
 
 ```ts
-import { createAssistantSession, defineTool } from "browser-assistant";
+import {
+  createAssistantSession,
+  defineTool,
+} from "@alfredo.salzillo/browser-assistant";
 
 const todos: string[] = [];
 
@@ -93,7 +97,10 @@ const pageAssistant = await createAssistantSession({ tools: pageTools });
 ### Availability
 
 ```ts
-import { availability, isSupported } from "browser-assistant/availability";
+import {
+  availability,
+  isSupported,
+} from "@alfredo.salzillo/browser-assistant/availability";
 
 if (!isSupported()) {
   // the browser has no built-in LanguageModel
@@ -175,23 +182,23 @@ Returns an `AssistantSession`:
 
 ### Modules
 
-| Import                            | Content                                                                                |
-| --------------------------------- | -------------------------------------------------------------------------------------- |
-| `browser-assistant`               | Everything below.                                                                      |
-| `browser-assistant/session`       | `createAssistantSession`, `AssistantResponseError`.                                    |
-| `browser-assistant/tools`         | `defineTool`, `assertValidTools`.                                                      |
-| `browser-assistant/protocol`      | `buildInstructions`, `buildResponseSchema`, `parseResponse` and the prompt formatters. |
-| `browser-assistant/schema`        | `validateSchema` (JSON Schema subset validator).                                       |
-| `browser-assistant/availability`  | `isSupported`, `availability`.                                                         |
-| `browser-assistant/languageModel` | `getLanguageModel` and the `LanguageModel` types.                                      |
-| `browser-assistant/types`         | Public types.                                                                          |
+| Import                                              | Content                                                                                |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `@alfredo.salzillo/browser-assistant`               | Everything below.                                                                      |
+| `@alfredo.salzillo/browser-assistant/session`       | `createAssistantSession`, `AssistantResponseError`.                                    |
+| `@alfredo.salzillo/browser-assistant/tools`         | `defineTool`, `assertValidTools`.                                                      |
+| `@alfredo.salzillo/browser-assistant/protocol`      | `buildInstructions`, `buildResponseSchema`, `parseResponse` and the prompt formatters. |
+| `@alfredo.salzillo/browser-assistant/schema`        | `validateSchema` (JSON Schema subset validator).                                       |
+| `@alfredo.salzillo/browser-assistant/availability`  | `isSupported`, `availability`.                                                         |
+| `@alfredo.salzillo/browser-assistant/languageModel` | `getLanguageModel` and the `LanguageModel` types.                                      |
+| `@alfredo.salzillo/browser-assistant/types`         | Public types.                                                                          |
 
 ## Examples
 
 The examples live in [`examples/`](./examples). Each one is an independent package with its own
 `package.json` and dependencies, so the library itself never depends on them. They are
 [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces) of the root package: a single
-`npm install` in the root installs them, and they import `browser-assistant` from `src/` through a Vite
+`npm install` in the root installs them, and they import `@alfredo.salzillo/browser-assistant` from `src/` through a Vite
 alias, so no library build is needed.
 
 ```bash
@@ -223,7 +230,7 @@ Build a static version with `npm run build --workspace examples/todo-list` (outp
 ### Adding an example
 
 Create a new `examples/<name>` directory with its own `package.json` (with `dev`, `build` and
-`typecheck` scripts), a `vite.config.ts` aliasing `browser-assistant` to `../../src` and a
+`typecheck` scripts), a `vite.config.ts` aliasing `@alfredo.salzillo/browser-assistant` to `../../src` and a
 `tsconfig.json` with the matching `paths`. Run `npm install` in the root to link it.
 
 ## Development
