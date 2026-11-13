@@ -186,15 +186,23 @@ Returns an `AssistantSession`:
 | `browser-assistant/languageModel` | `getLanguageModel` and the `LanguageModel` types.                                      |
 | `browser-assistant/types`         | Public types.                                                                          |
 
-## Example
+## Examples
 
-A React todo app driven by multiple assistant sessions lives in [`example/`](./example):
+The examples live in [`examples/`](./examples). Each one is an independent package with its own
+`package.json` and dependencies, so the library itself never depends on them. They are
+[npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces) of the root package: a single
+`npm install` in the root installs them, and they import `browser-assistant` from `src/` through a Vite
+alias, so no library build is needed.
 
 ```bash
 npm install
-npm run example
+npm run dev --workspace examples/todo-list # or: npm run example:todo-list
+npm run examples:build # builds every example
 ```
 
+### Todo list
+
+A React todo app driven by multiple assistant sessions, in [`examples/todo-list`](./examples/todo-list).
 Open the printed URL. The example shows:
 
 - a shared todo list, changed both by the UI and by the assistants,
@@ -209,7 +217,14 @@ Open the printed URL. The example shows:
 To use the real model, open the example in a browser with the Prompt API enabled (for example Chrome with
 `chrome://flags/#prompt-api-for-gemini-nano`) and uncheck the demo model option.
 
-Build a static version with `npm run example:build` (output in `example/dist`).
+Build a static version with `npm run build --workspace examples/todo-list` (output in
+`examples/todo-list/dist`).
+
+### Adding an example
+
+Create a new `examples/<name>` directory with its own `package.json` (with `dev`, `build` and
+`typecheck` scripts), a `vite.config.ts` aliasing `browser-assistant` to `../../src` and a
+`tsconfig.json` with the matching `paths`. Run `npm install` in the root to link it.
 
 ## Development
 

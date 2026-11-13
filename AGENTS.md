@@ -15,18 +15,22 @@ functions to call, executes them and loops until the goal is reached.
 -   Build the project: `npm run build`
 -   Run tests: `npm test`
 -   Run lint checks: `npm run lint`
--   Run type checks (library, tests and example): `npm run typecheck`
--   Run the example UI: `npm run example`
--   Build the example UI: `npm run example:build`
+-   Run type checks (library, tests and examples): `npm run typecheck`
+-   Run the todo list example UI: `npm run example:todo-list`
+-   Build all the examples: `npm run examples:build`
 
 ## Project Structure
 
 -   `src/`: library source. Every `src/**/*.ts` file is a public module (built by `modular-library/vite`)
     and must have a matching entry in the `package.json` `exports` map.
 -   `test/`: Vitest unit tests. Tests never run a real model: use the mocked `LanguageModel` in `test/mocks`.
--   `example/`: React + Vite testable UI, importing `browser-assistant` from `src/` through a Vite alias
-    (and `paths` in `example/tsconfig.json`). It includes a rule based demo `LanguageModel` to test the UI
-    in browsers without the Prompt API.
+-   `examples/`: testable UIs, one npm workspace per directory (for example `examples/todo-list`). Each
+    example has its own `package.json` with its own dependencies (never add them to the root
+    `package.json`), and `dev`, `build` and `typecheck` scripts. Examples import `browser-assistant` from
+    `src/` through a Vite alias (and `paths` in their `tsconfig.json`), never from npm: the
+    `browser-assistant` name on the npm registry belongs to another package.
+-   `examples/todo-list/`: React + Vite todo app. It includes a rule based demo `LanguageModel` to test
+    the UI in browsers without the Prompt API.
 
 ## Technology Stack
 
@@ -34,7 +38,8 @@ functions to call, executes them and loops until the goal is reached.
 -   **Vite** (library mode, ES modules only) with the **modular-library** plugin and **unplugin-dts**.
 -   **Vitest** with v8 coverage for tests.
 -   **Biome** for linting and formatting.
--   **React** for the example UI only (never a dependency of the library).
+-   **npm workspaces** for the examples.
+-   **React** for the examples only (never a dependency of the library).
 -   Keep this `AGENTS.md` technology stack section up to date whenever the project tech stack changes.
 
 ## Development Workflow

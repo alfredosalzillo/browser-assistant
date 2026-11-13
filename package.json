@@ -6,6 +6,9 @@
   "files": [
     "dist"
   ],
+  "workspaces": [
+    "examples/*"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -45,9 +48,9 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "test": "vitest run --coverage",
-    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p example",
-    "example": "vite --config example/vite.config.ts",
-    "example:build": "vite build --config example/vite.config.ts",
+    "typecheck": "tsc --noEmit -p . && npm run typecheck --workspaces --if-present",
+    "example:todo-list": "npm run dev --workspace examples/todo-list",
+    "examples:build": "npm run build --workspaces --if-present",
     "check-exports": "modular-library check",
     "prepare": "npm run build && npm run lint && npm run check-exports"
   },
@@ -79,13 +82,8 @@
   "devDependencies": {
     "@biomejs/biome": "^2.6.7",
     "@types/node": "^25.9.1",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.3.0",
     "@vitest/coverage-v8": "^4.1.7",
     "modular-library": "^0.0.6",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
     "typescript": "^6.0.3",
     "unplugin-dts": "^1.0.1",
     "vite": "^8.0.14",
