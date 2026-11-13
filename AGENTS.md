@@ -15,14 +15,18 @@ functions to call, executes them and loops until the goal is reached.
 -   Build the project: `npm run build`
 -   Run tests: `npm test`
 -   Run lint checks: `npm run lint`
+-   Run type checks (library, tests and example): `npm run typecheck`
 -   Run the example UI: `npm run example`
+-   Build the example UI: `npm run example:build`
 
 ## Project Structure
 
 -   `src/`: library source. Every `src/**/*.ts` file is a public module (built by `modular-library/vite`)
     and must have a matching entry in the `package.json` `exports` map.
 -   `test/`: Vitest unit tests. Tests never run a real model: use the mocked `LanguageModel` in `test/mocks`.
--   `example/`: React + Vite testable UI, importing the library from `src/` through a Vite alias.
+-   `example/`: React + Vite testable UI, importing `browser-assistant` from `src/` through a Vite alias
+    (and `paths` in `example/tsconfig.json`). It includes a rule based demo `LanguageModel` to test the UI
+    in browsers without the Prompt API.
 
 ## Technology Stack
 

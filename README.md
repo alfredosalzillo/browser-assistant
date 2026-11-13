@@ -195,7 +195,21 @@ npm install
 npm run example
 ```
 
-Open the printed URL in a browser that supports the Prompt API.
+Open the printed URL. The example shows:
+
+- a shared todo list, changed both by the UI and by the assistants,
+- multiple assistant sessions side by side, created from two presets: a **Todo manager** with all the
+  tools and a **Read-only reviewer** with only `listTodos`,
+- every step of a run (reasoning and calls with their status),
+- an "Ask approval before each call" toggle wired to `onBeforeCall`,
+- a rule based **demo model** (enabled by default when the built-in `LanguageModel` is missing) that
+  speaks the same JSON protocol, to try the UI in any browser. It understands goals like
+  `add milk and bread`, `complete 1`, `remove 2`, `clear` and `list`.
+
+To use the real model, open the example in a browser with the Prompt API enabled (for example Chrome with
+`chrome://flags/#prompt-api-for-gemini-nano`) and uncheck the demo model option.
+
+Build a static version with `npm run example:build` (output in `example/dist`).
 
 ## Development
 
@@ -204,6 +218,7 @@ npm install
 npm run build
 npm test
 npm run lint
+npm run typecheck
 ```
 
 To test GitHub workflows locally, you can use [`act`](https://nektosact.com/).
