@@ -1,0 +1,92 @@
+{
+  "name": "browser-assistant",
+  "version": "0.0.1",
+  "private": false,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./availability": {
+      "types": "./dist/availability.d.ts",
+      "import": "./dist/availability.js"
+    },
+    "./languageModel": {
+      "types": "./dist/languageModel.d.ts",
+      "import": "./dist/languageModel.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "import": "./dist/protocol.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/schema.js"
+    },
+    "./session": {
+      "types": "./dist/session.d.ts",
+      "import": "./dist/session.js"
+    },
+    "./tools": {
+      "types": "./dist/tools.d.ts",
+      "import": "./dist/tools.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "test": "vitest run --coverage",
+    "check-exports": "modular-library check",
+    "prepare": "npm run build && npm run lint && npm run check-exports"
+  },
+  "keywords": [
+    "browser-assistant",
+    "agent",
+    "agentic",
+    "assistant",
+    "prompt-api",
+    "language-model",
+    "built-in-ai",
+    "function-calling",
+    "typescript"
+  ],
+  "author": "alfredo salzillo <alfredosalzillo93@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alfredosalzillo/browser-assistant.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alfredosalzillo/browser-assistant/issues"
+  },
+  "funding": {
+    "url": "https://github.com/sponsors/alfredosalzillo"
+  },
+  "homepage": "https://github.com/alfredosalzillo/browser-assistant#readme",
+  "description": "Modular library to build agentic assistants in the browser with the built-in LanguageModel (Prompt API).",
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.7",
+    "@types/node": "^25.9.1",
+    "@vitest/coverage-v8": "^4.1.7",
+    "modular-library": "^0.0.5",
+    "typescript": "^6.0.3",
+    "unplugin-dts": "^1.0.1",
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
+  },
+  "volta": {
+    "node": "25.9.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

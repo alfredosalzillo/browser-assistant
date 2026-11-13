@@ -125,8 +125,18 @@ After each `calls` answer the library executes the calls in order and sends the 
 
 ```json
 [
-  { "name": "addTodo", "arguments": { "title": "milk" }, "status": "success", "result": { "id": 0 } },
-  { "name": "removeTodo", "arguments": { "id": 9 }, "status": "error", "error": "Todo 9 not found" }
+  {
+    "name": "addTodo",
+    "arguments": { "title": "milk" },
+    "status": "success",
+    "result": { "id": 0 }
+  },
+  {
+    "name": "removeTodo",
+    "arguments": { "id": 9 },
+    "status": "error",
+    "error": "Todo 9 not found"
+  }
 ]
 ```
 
@@ -137,19 +147,19 @@ A call `status` is `success`, `error` (the tool threw or the arguments are inval
 
 ### `createAssistantSession(options)`
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `tools` | `Tool[]` | `[]` | Functions the assistant can call. Names must be unique. |
-| `instructions` | `string` | `undefined` | Extra instructions appended to the system prompt. |
-| `maxSteps` | `number` | `10` | Maximum model responses per run. |
-| `maxRetries` | `number` | `1` | Retries when the model answers with invalid JSON. |
-| `onBeforeCall` | `(call, tool) => boolean \| Promise<boolean>` | `undefined` | Approve or reject a call before it runs. |
-| `onStep` | `(step) => void` | `undefined` | Called after every completed step. |
-| `onToolCall` | `(call) => void` | `undefined` | Called before a tool runs. |
-| `onToolResult` | `(result) => void` | `undefined` | Called after a tool runs. |
-| `monitor` | `(monitor) => void` | `undefined` | Forwarded to `LanguageModel.create` (download progress). |
-| `languageModelOptions` | `LanguageModelCreateOptions` | `undefined` | Extra options forwarded to `LanguageModel.create`. |
-| `languageModel` | `LanguageModelStatic` | `globalThis.LanguageModel` | Custom `LanguageModel` implementation (useful for tests). |
+| Option                 | Type                                          | Default                    | Description                                               |
+| ---------------------- | --------------------------------------------- | -------------------------- | --------------------------------------------------------- |
+| `tools`                | `Tool[]`                                      | `[]`                       | Functions the assistant can call. Names must be unique.   |
+| `instructions`         | `string`                                      | `undefined`                | Extra instructions appended to the system prompt.         |
+| `maxSteps`             | `number`                                      | `10`                       | Maximum model responses per run.                          |
+| `maxRetries`           | `number`                                      | `1`                        | Retries when the model answers with invalid JSON.         |
+| `onBeforeCall`         | `(call, tool) => boolean \| Promise<boolean>` | `undefined`                | Approve or reject a call before it runs.                  |
+| `onStep`               | `(step) => void`                              | `undefined`                | Called after every completed step.                        |
+| `onToolCall`           | `(call) => void`                              | `undefined`                | Called before a tool runs.                                |
+| `onToolResult`         | `(result) => void`                            | `undefined`                | Called after a tool runs.                                 |
+| `monitor`              | `(monitor) => void`                           | `undefined`                | Forwarded to `LanguageModel.create` (download progress).  |
+| `languageModelOptions` | `LanguageModelCreateOptions`                  | `undefined`                | Extra options forwarded to `LanguageModel.create`.        |
+| `languageModel`        | `LanguageModelStatic`                         | `globalThis.LanguageModel` | Custom `LanguageModel` implementation (useful for tests). |
 
 Returns an `AssistantSession`:
 
@@ -161,16 +171,16 @@ Returns an `AssistantSession`:
 
 ### Modules
 
-| Import | Content |
-| --- | --- |
-| `browser-assistant` | Everything below. |
-| `browser-assistant/session` | `createAssistantSession`. |
-| `browser-assistant/tools` | `defineTool`, `assertValidTools`. |
-| `browser-assistant/protocol` | `buildInstructions`, `buildResponseSchema`, `parseResponse`. |
-| `browser-assistant/schema` | `validateSchema` (JSON Schema subset validator). |
-| `browser-assistant/availability` | `isSupported`, `availability`. |
-| `browser-assistant/languageModel` | `getLanguageModel` and the `LanguageModel` types. |
-| `browser-assistant/types` | Public types. |
+| Import                            | Content                                                      |
+| --------------------------------- | ------------------------------------------------------------ |
+| `browser-assistant`               | Everything below.                                            |
+| `browser-assistant/session`       | `createAssistantSession`.                                    |
+| `browser-assistant/tools`         | `defineTool`, `assertValidTools`.                            |
+| `browser-assistant/protocol`      | `buildInstructions`, `buildResponseSchema`, `parseResponse`. |
+| `browser-assistant/schema`        | `validateSchema` (JSON Schema subset validator).             |
+| `browser-assistant/availability`  | `isSupported`, `availability`.                               |
+| `browser-assistant/languageModel` | `getLanguageModel` and the `LanguageModel` types.            |
+| `browser-assistant/types`         | Public types.                                                |
 
 ## Example
 
