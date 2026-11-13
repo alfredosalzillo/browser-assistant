@@ -213,7 +213,8 @@ A React + [MUI](https://mui.com/material-ui/) todo app driven by multiple assist
 [`examples/todo-list`](./examples/todo-list). Open the printed URL. The example shows:
 
 - a full width todo list in the center, changed both by the UI and by the assistants,
-- an agentic chat column on the right: the **+** button starts a new session from one of two presets
+- an agentic chat column on the right (the `AssistantPanel` component, which owns the presets and the
+  sessions): the **+** button starts a new session from one of two presets
   (a **Todo manager** with all the tools and a **Read-only reviewer** with only `listTodos`) and the
   history button lists the sessions to switch between them, each one keeping its own conversation,
 - every step of a run (reasoning and calls with their status), with the prompt fixed at the bottom,
