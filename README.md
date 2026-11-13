@@ -207,11 +207,30 @@ destroyed) in creation order. Assistants destroyed while iterating are skipped.
 | `@alfredo.salzillo/browser-assistant/languageModel` | `getLanguageModel` and the `LanguageModel` types.                                      |
 | `@alfredo.salzillo/browser-assistant/types`         | Public types.                                                                          |
 
+## Website
+
+The documentation website is live at
+[alfredosalzillo.github.io/browser-assistant](https://alfredosalzillo.github.io/browser-assistant/).
+It is a single React + [MUI](https://mui.com/material-ui/) page in [`website`](./website) that explains
+what the library is and how to use it, links every example and contains a small **theme assistant**:
+an `Assistant` with `getTheme`, `setPrimaryColor`, `setSecondaryColor`, `setMode` and `resetTheme`
+tools that changes the colours of the website itself. Like the examples, it imports
+`@alfredo.salzillo/browser-assistant` from `src/`.
+
+```bash
+npm run website:dev # starts the website
+npm run pages:build # builds every example, then the website, in website/dist
+```
+
+`npm run pages:build` copies each `examples/<name>/dist` into `website/dist/<name>`, so the website
+and the examples are deployed together on GitHub Pages. The site is rebuilt and deployed
+automatically on every push to `main`; configure the repository's Pages source as **GitHub Actions**
+to enable deployment.
+
 ## Examples
 
-Live demos are published on [GitHub Pages](https://alfredosalzillo.github.io/browser-assistant/).
-Each example has its own link below. The site is rebuilt and deployed automatically on every push to
-`main`; configure the repository's Pages source as **GitHub Actions** to enable deployment.
+Live demos are published on [GitHub Pages](https://alfredosalzillo.github.io/browser-assistant/)
+together with the website, which links every example. Each example also has its own link below.
 
 The examples live in [`examples/`](./examples). Each one is an independent package with its own
 `package.json` and dependencies, so the library itself never depends on them. They are
@@ -222,7 +241,7 @@ alias, so no library build is needed.
 ```bash
 npm install
 npm run dev --workspace examples/todo-list # or: npm run example:todo-list
-npm run examples:build # builds every example
+npm run examples:build # builds every example (not the website)
 ```
 
 ### Todo list
@@ -252,9 +271,11 @@ Build a static version with `npm run build --workspace examples/todo-list` (outp
 
 Create a new `examples/<name>` directory with its own `package.json` (with `dev`, `build` and
 `typecheck` scripts), a `vite.config.ts` aliasing `@alfredo.salzillo/browser-assistant` to `../../src` and a
-`tsconfig.json` with the matching `paths`. Run `npm install` in the root to link it. Add the example
-to this README with its GitHub Pages link; the continuous delivery workflow builds and publishes
-every example that has a `dist` directory.
+`tsconfig.json` with the matching `paths`. Run `npm install` in the root to link it. The website
+lists it automatically (reading its `package.json` `description`) and links it at `./<name>/`; the
+continuous delivery workflow builds and publishes every example that has a `dist` directory under
+`https://alfredosalzillo.github.io/browser-assistant/<name>/`. Still add the example to this README
+with its GitHub Pages link.
 
 ## Development
 

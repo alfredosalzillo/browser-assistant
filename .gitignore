@@ -8,5 +8,4 @@ yarn.lock
 npm-debug.log*
 .idea
 dist
-pages
 .ai-tmp

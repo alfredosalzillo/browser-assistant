@@ -13,12 +13,13 @@ functions to call, executes them and loops until the goal is reached.
 
 -   Install dependencies: `npm install`
 -   Build the project: `npm run build`
--   Build examples for GitHub Pages: `npm run examples:build && npm run examples:pages`
+-   Build the website and the examples for GitHub Pages (output in `website/dist`): `npm run pages:build`
+-   Run the website: `npm run website:dev`
 -   Run tests: `npm test`
 -   Run lint checks: `npm run lint`
--   Run type checks (library, tests and examples): `npm run typecheck`
+-   Run type checks (library, tests, examples and website): `npm run typecheck`
 -   Run the todo list example UI: `npm run example:todo-list`
--   Build all the examples: `npm run examples:build`
+-   Build all the examples (not the website): `npm run examples:build`
 
 ## Project Structure
 
@@ -33,6 +34,12 @@ functions to call, executes them and loops until the goal is reached.
     listed in `README.md` with its GitHub Pages link.
 -   `examples/todo-list/`: React + MUI + Vite todo app. It requires a browser with the built-in Prompt API;
     unsupported browsers see a notice in the assistant panel.
+-   `website/`: the documentation website deployed on GitHub Pages, an npm workspace that is always a
+    React + MUI + Vite single page explaining the library, with a theme assistant (`src/themeTools.ts`,
+    `src/ThemeAssistant.tsx`) that changes the website colours. Like the examples it imports the
+    library from `src/`; it lists the examples from `examples/*/package.json` and its build copies every
+    `examples/<name>/dist` into `website/dist/<name>` (build the examples first, `npm run pages:build`
+    does it).
 
 ## Technology Stack
 
@@ -40,9 +47,9 @@ functions to call, executes them and loops until the goal is reached.
 -   **Vite** (library mode, ES modules only) with the **modular-library** plugin and **unplugin-dts**.
 -   **Vitest** with v8 coverage for tests.
 -   **Biome** for linting and formatting.
--   **npm workspaces** for the examples.
--   **React** and **MUI** (`@mui/material`, `@mui/icons-material`, Emotion) for the examples only (never a
-    dependency of the library).
+-   **npm workspaces** for the examples and the website.
+-   **React** and **MUI** (`@mui/material`, `@mui/icons-material`, Emotion) for the examples and the website
+    only (never a dependency of the library).
 -   Keep this `AGENTS.md` technology stack section up to date whenever the project tech stack changes.
 
 ## Development Workflow
@@ -53,8 +60,9 @@ functions to call, executes them and loops until the goal is reached.
 4.  **Validate**: Run relevant tests with `npm test` when behavior changes.
 5.  **Code Style**: Follow the existing style and naming patterns in the codebase.
 6.  **GitHub Workflows**: To test workflows locally, use [`act`](https://nektosact.com/).
-7.  **Examples delivery**: `.github/workflows/cd.yml` builds and deploys examples to GitHub Pages on
-    pushes to `main`; `npm run examples:pages` collects each built example and creates the landing page.
+7.  **Website and examples delivery**: `.github/workflows/cd.yml` runs `npm run pages:build` and deploys
+    `website/dist` (the website with every built example copied in `website/dist/<name>`) to GitHub Pages
+    on pushes to `main`.
 
 ## Temporary Files
 

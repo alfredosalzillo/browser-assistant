@@ -10,7 +10,8 @@
     "dist"
   ],
   "workspaces": [
-    "examples/*"
+    "examples/*",
+    "website"
   ],
   "exports": {
     ".": {
@@ -53,8 +54,10 @@
     "test": "vitest run --coverage",
     "typecheck": "tsc --noEmit -p . && npm run typecheck --workspaces --if-present",
     "example:todo-list": "npm run dev --workspace examples/todo-list",
-    "examples:build": "npm run build --workspaces --if-present",
-    "examples:pages": "node scripts/examples-pages.mjs",
+    "examples:build": "npm run build --workspace examples --if-present",
+    "website:dev": "npm run dev --workspace website",
+    "website:build": "npm run build --workspace website",
+    "pages:build": "npm run examples:build && npm run website:build",
     "check-exports": "modular-library check",
     "prepare": "npm run build && npm run lint && npm run check-exports"
   },
