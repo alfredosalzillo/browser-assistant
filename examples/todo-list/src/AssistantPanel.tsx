@@ -2,7 +2,6 @@ import {
   type AnyTool,
   type AssistantSession,
   createAssistantSession,
-  type LanguageModelStatic,
   type Step,
   type ToolCall,
   type ToolResultStatus,
@@ -58,7 +57,6 @@ type PendingCall = {
 type AssistantPanelProps = {
   preset: AssistantPreset;
   tools: AnyTool[];
-  languageModel?: LanguageModelStatic;
   onGoal?: (goal: string) => void;
   onRunningChange?: (running: boolean) => void;
 };
@@ -84,7 +82,6 @@ const AssistantMessage = ({ children }: { children: ReactNode }) => (
 const AssistantPanel = ({
   preset,
   tools,
-  languageModel,
   onGoal,
   onRunningChange,
 }: AssistantPanelProps) => {
@@ -122,7 +119,6 @@ const AssistantPanel = ({
     createAssistantSession({
       tools: tools.filter((tool) => preset.toolNames.includes(tool.name)),
       instructions: preset.instructions,
-      languageModel,
       onBeforeCall: (call) =>
         requireApprovalRef.current
           ? new Promise<boolean>((resolve) => {
@@ -145,7 +141,7 @@ const AssistantPanel = ({
       pendingRef.current?.resolve(false);
       created?.destroy();
     };
-  }, [preset, tools, languageModel]);
+  }, [preset, tools]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();

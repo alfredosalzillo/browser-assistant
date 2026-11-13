@@ -1,6 +1,5 @@
 import {
   availability,
-  isSupported,
   type LanguageModelAvailability,
 } from "@alfredo.salzillo/browser-assistant";
 import AddIcon from "@mui/icons-material/Add";
@@ -10,21 +9,21 @@ import ChecklistIcon from "@mui/icons-material/Checklist";
 import CloseIcon from "@mui/icons-material/Close";
 import DarkModeIcon from "@mui/icons-material/DarkModeOutlined";
 import HistoryIcon from "@mui/icons-material/History";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LightModeIcon from "@mui/icons-material/LightModeOutlined";
 import TuneIcon from "@mui/icons-material/Tune";
 import {
   AppBar,
   Box,
   CircularProgress,
-  Divider,
   IconButton,
+  Link,
   ListItemIcon,
   ListItemText,
   ListSubheader,
   Menu,
   MenuItem,
   Stack,
-  Switch,
   Toolbar,
   Tooltip,
   Typography,
@@ -32,7 +31,6 @@ import {
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import AssistantPanel, { type AssistantPreset } from "./AssistantPanel";
-import { demoLanguageModel } from "./demoLanguageModel";
 import TodoList from "./TodoList";
 import { createTodoStore } from "./todoStore";
 import { createTodoTools } from "./todoTools";
@@ -82,7 +80,6 @@ const App = () => {
   const tools = useMemo(() => createTodoTools(store), []);
   const { mode, systemMode, setMode } = useColorScheme();
   const [status, setStatus] = useState<LanguageModelAvailability>();
-  const [useDemoModel, setUseDemoModel] = useState(!isSupported());
   const [panels, setPanels] = useState<Panel[]>([
     { key: 1, preset: presets[0], running: false },
   ]);
@@ -92,8 +89,14 @@ const App = () => {
   const [settingsAnchor, setSettingsAnchor] = useState<HTMLElement>();
 
   useEffect(() => {
-    availability().then(setStatus);
+    availability()
+      .catch((): LanguageModelAvailability => "unavailable")
+      .then(setStatus);
   }, []);
+
+  const checking = status === undefined;
+  const supported = status !== "unavailable";
+  const ready = supported && !checking;
 
   const resolvedMode = (mode === "system" ? systemMode : mode) ?? "light";
   const active = panels.find((panel) => panel.key === activeKey);
@@ -205,9 +208,13 @@ const App = () => {
             <AutoAwesomeIcon color="primary" fontSize="small" />
             <Box sx={{ flex: 1, minWidth: 0, pl: 0.5 }}>
               <Typography variant="subtitle2" noWrap>
-                {active ? panelTitle(active) : "Assistant"}
+                {!supported
+                  ? "Assistant unavailable"
+                  : ready && active
+                    ? panelTitle(active)
+                    : "Assistant"}
               </Typography>
-              {active && (
+              {ready && active && (
                 <Typography variant="caption" color="text.secondary" noWrap>
                   {active.preset.label}
                 </Typography>
@@ -216,6 +223,7 @@ const App = () => {
             <Tooltip title="New session">
               <IconButton
                 aria-label="New session"
+                disabled={!ready}
                 onClick={(event) => setNewAnchor(event.currentTarget)}
               >
                 <AddIcon />
@@ -224,6 +232,7 @@ const App = () => {
             <Tooltip title="Sessions history">
               <IconButton
                 aria-label="Sessions history"
+                disabled={!ready}
                 onClick={(event) => setHistoryAnchor(event.currentTarget)}
               >
                 <HistoryIcon />
@@ -329,39 +338,75 @@ const App = () => {
                 secondary={status ?? "checking…"}
               />
             </MenuItem>
-            <Divider />
-            <MenuItem onClick={() => setUseDemoModel((value) => !value)}>
-              <ListItemText
-                primary="Use the demo model"
-                secondary="Rule based, works in any browser"
-              />
-              <Switch edge="end" checked={useDemoModel} tabIndex={-1} />
-            </MenuItem>
           </Menu>
 
-          {panels.map((panel) => (
-            <Box
-              key={`${panel.key}-${useDemoModel}`}
+          {!supported ? (
+            <Stack
+              component="section"
+              role="status"
+              spacing={1.5}
               sx={{
-                display: panel.key === activeKey ? "flex" : "none",
-                flexDirection: "column",
                 flex: 1,
                 minHeight: 0,
+                alignItems: "center",
+                justifyContent: "center",
+                px: 3,
+                textAlign: "center",
               }}
             >
-              <AssistantPanel
-                preset={panel.preset}
-                tools={tools}
-                languageModel={useDemoModel ? demoLanguageModel : undefined}
-                onGoal={(goal) => {
-                  if (!panel.title) updatePanel(panel.key, { title: goal });
+              <InfoOutlinedIcon color="warning" sx={{ fontSize: 40 }} />
+              <Typography variant="h6">LanguageModel not supported</Typography>
+              <Typography variant="body2" color="text.secondary">
+                The built-in LanguageModel is not available in this browser. Use
+                a browser that supports the Prompt API to chat with the todo
+                assistant.
+              </Typography>
+              <Link
+                href="https://developer.chrome.com/docs/ai/prompt-api"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Learn about the Prompt API
+              </Link>
+            </Stack>
+          ) : checking ? (
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                color: "text.secondary",
+              }}
+            >
+              <CircularProgress size={16} />
+              <Typography variant="body2">Checking LanguageModel…</Typography>
+            </Stack>
+          ) : (
+            panels.map((panel) => (
+              <Box
+                key={panel.key}
+                sx={{
+                  display: panel.key === activeKey ? "flex" : "none",
+                  flexDirection: "column",
+                  flex: 1,
+                  minHeight: 0,
                 }}
-                onRunningChange={(running) =>
-                  updatePanel(panel.key, { running })
-                }
-              />
-            </Box>
-          ))}
+              >
+                <AssistantPanel
+                  preset={panel.preset}
+                  tools={tools}
+                  onGoal={(goal) => {
+                    if (!panel.title) updatePanel(panel.key, { title: goal });
+                  }}
+                  onRunningChange={(running) =>
+                    updatePanel(panel.key, { running })
+                  }
+                />
+              </Box>
+            ))
+          )}
         </Box>
       </Box>
     </Box>

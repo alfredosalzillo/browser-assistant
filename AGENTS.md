@@ -29,8 +29,8 @@ functions to call, executes them and loops until the goal is reached.
     `package.json`), and `dev`, `build` and `typecheck` scripts. Examples import
     `@alfredo.salzillo/browser-assistant` from `src/` through a Vite alias (and `paths` in their
     `tsconfig.json`), never from npm, so no library build is needed.
--   `examples/todo-list/`: React + MUI + Vite todo app. It includes a rule based demo `LanguageModel` to
-    test the UI in browsers without the Prompt API.
+-   `examples/todo-list/`: React + MUI + Vite todo app. It requires a browser with the built-in Prompt API;
+    unsupported browsers see a notice in the assistant panel.
 
 ## Technology Stack
 
