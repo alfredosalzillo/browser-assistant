@@ -21,9 +21,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      # package-lock.json is not committed, so npm ci can't be used
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: npm ci --ignore-scripts
 
       - name: Lint
         run: npm run lint
