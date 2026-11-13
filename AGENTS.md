@@ -43,9 +43,10 @@ functions to call, executes them and loops until the goal is reached.
 
 ## Technology Stack
 
--   **TypeScript**: Use TypeScript for all code changes. Follow the existing configuration in `tsconfig.json`.
--   **Vite** (library mode, ES modules only) with the **modular-library** plugin and **unplugin-dts**.
--   **Vitest** with v8 coverage for tests.
+-   **TypeScript 7**: Use TypeScript for all code changes. Follow the existing configuration in `tsconfig.json`.
+    The library declarations (`dist/*.d.ts`) are emitted by `tsc -p tsconfig.build.json` after the Vite build.
+-   **Vite** (library mode, ES modules only) with the **modular-library** plugin.
+-   **Vitest 5** with v8 coverage for tests.
 -   **Biome** for linting and formatting.
 -   **npm workspaces** for the examples and the website.
 -   **React** and **MUI** (`@mui/material`, `@mui/icons-material`, Emotion) for the examples and the website
