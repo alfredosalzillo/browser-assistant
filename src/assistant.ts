@@ -1,4 +1,8 @@
-import { getLanguageModel, type LanguageModelCreateOptions, type LanguageModelSession } from "./languageModel";
+import {
+  getLanguageModel,
+  type LanguageModelCreateOptions,
+  type LanguageModelSession,
+} from "./languageModel";
 import {
   buildInstructions,
   buildResponseSchema,

@@ -11,7 +11,8 @@ export type LanguageModelAvailability = Availability;
 export type LanguageModelCreateMonitor = CreateMonitor;
 
 /** Core creation options (no session-lifecycle fields). */
-export type LanguageModelCreateCoreOptions = globalThis.LanguageModelCreateCoreOptions;
+export type LanguageModelCreateCoreOptions =
+  globalThis.LanguageModelCreateCoreOptions;
 
 /** Full session creation options. */
 export type LanguageModelCreateOptions = globalThis.LanguageModelCreateOptions;
