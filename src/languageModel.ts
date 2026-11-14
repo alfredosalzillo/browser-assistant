@@ -1,80 +1,48 @@
 /**
- * Minimal typed subset of the built-in `LanguageModel` (Prompt API).
+ * Re-exports and utilities for the built-in `LanguageModel` (Prompt API).
+ * Types sourced from `@types/dom-chromium-ai`.
  * @see https://github.com/webmachinelearning/prompt-api
  */
 
-export type LanguageModelAvailability =
-  | "unavailable"
-  | "downloadable"
-  | "downloading"
-  | "available";
+/** Availability of the built-in LanguageModel. */
+export type LanguageModelAvailability = Availability;
 
-export type LanguageModelMessageRole = "system" | "user" | "assistant";
+/** The monitor passed to the `monitor` callback during session creation. */
+export type LanguageModelCreateMonitor = CreateMonitor;
 
-export type LanguageModelMessage = {
-  role: LanguageModelMessageRole;
-  content: string;
-};
+/** Core creation options (no session-lifecycle fields). */
+export type LanguageModelCreateCoreOptions = globalThis.LanguageModelCreateCoreOptions;
 
-export type LanguageModelExpected = {
-  type: "text";
-  languages?: string[];
-};
+/** Full session creation options. */
+export type LanguageModelCreateOptions = globalThis.LanguageModelCreateOptions;
 
-export type LanguageModelDownloadProgressEvent = Event & {
-  loaded: number;
-};
+/** Options for a single `prompt()` call. */
+export type LanguageModelPromptOptions = globalThis.LanguageModelPromptOptions;
 
-export interface LanguageModelCreateMonitor extends EventTarget {
-  addEventListener(
-    type: "downloadprogress",
-    listener: (event: LanguageModelDownloadProgressEvent) => void,
-  ): void;
-  addEventListener(
-    type: string,
-    listener: EventListenerOrEventListenerObject | null,
-  ): void;
-}
-
-export type LanguageModelCreateCoreOptions = {
-  temperature?: number;
-  topK?: number;
-  expectedInputs?: LanguageModelExpected[];
-  expectedOutputs?: LanguageModelExpected[];
-};
-
-export type LanguageModelCreateOptions = LanguageModelCreateCoreOptions & {
-  initialPrompts?: LanguageModelMessage[];
-  signal?: AbortSignal;
-  monitor?: (monitor: LanguageModelCreateMonitor) => void;
-};
-
-export type LanguageModelPromptOptions = {
-  responseConstraint?: object;
-  omitResponseConstraintInput?: boolean;
-  signal?: AbortSignal;
-};
-
+/**
+ * Minimal interface for an active LanguageModel session.
+ * This is a subset of the full `LanguageModel` class used by this library.
+ */
 export interface LanguageModelSession {
   prompt(
-    input: string | LanguageModelMessage[],
+    input: LanguageModelPrompt,
     options?: LanguageModelPromptOptions,
   ): Promise<string>;
   destroy(): void;
-  readonly inputUsage?: number;
-  readonly inputQuota?: number;
 }
 
+/**
+ * Minimal interface for the static side of the built-in `LanguageModel` global.
+ * This is a subset of `typeof LanguageModel` used by this library.
+ */
 export interface LanguageModelStatic {
-  availability(
-    options?: LanguageModelCreateCoreOptions,
-  ): Promise<LanguageModelAvailability>;
+  availability(options?: LanguageModelCreateCoreOptions): Promise<Availability>;
   create(options?: LanguageModelCreateOptions): Promise<LanguageModelSession>;
 }
 
 /**
- * getLanguageModel returns the built-in `LanguageModel` global, or `undefined` when the browser
- * doesn't support the Prompt API.
+ * getLanguageModel returns the built-in `LanguageModel` global cast to `LanguageModelStatic`,
+ * or `undefined` when the browser doesn't support the Prompt API.
  */
 export const getLanguageModel = (): LanguageModelStatic | undefined =>
   (globalThis as { LanguageModel?: LanguageModelStatic }).LanguageModel;

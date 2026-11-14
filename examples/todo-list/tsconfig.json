@@ -8,7 +8,7 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["node", "vite/client"],
+    "types": ["node", "vite/client", "dom-chromium-ai"],
     "paths": {
       "@alfredo.salzillo/browser-assistant": ["../../src/index.ts"],
       "@alfredo.salzillo/browser-assistant/*": ["../../src/*"]

@@ -1,4 +1,4 @@
-import { getLanguageModel, type LanguageModelSession } from "./languageModel";
+import { getLanguageModel, type LanguageModelCreateOptions, type LanguageModelSession } from "./languageModel";
 import {
   buildInstructions,
   buildResponseSchema,
@@ -107,7 +107,7 @@ export class Assistant {
       ],
       monitor,
       signal,
-    });
+    } as LanguageModelCreateOptions);
 
     const assistant = new Assistant(model, assistantTools, {
       maxSteps,

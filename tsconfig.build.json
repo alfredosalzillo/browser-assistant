@@ -4,7 +4,7 @@
     "rootDir": "src",
     "outDir": "dist",
     "emitDeclarationOnly": true,
-    "types": []
+    "types": ["dom-chromium-ai"]
   },
   "include": ["src"]
 }

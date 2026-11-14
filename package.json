@@ -1,6 +1,6 @@
 {
   "name": "@alfredo.salzillo/browser-assistant",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -88,6 +88,7 @@
   "description": "Modular library to build agentic assistants in the browser with the built-in LanguageModel (Prompt API).",
   "devDependencies": {
     "@biomejs/biome": "^2.6.7",
+    "@types/dom-chromium-ai": "^0.0.18",
     "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^5.1.0",
     "modular-library": "^0.0.6",
