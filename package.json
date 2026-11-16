@@ -1,6 +1,6 @@
 {
   "name": "@alfredo.salzillo/browser-assistant",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -37,6 +37,10 @@
     "./schema": {
       "types": "./dist/schema.d.ts",
       "import": "./dist/schema.js"
+    },
+    "./storage": {
+      "types": "./dist/storage.d.ts",
+      "import": "./dist/storage.js"
     },
     "./tools": {
       "types": "./dist/tools.d.ts",

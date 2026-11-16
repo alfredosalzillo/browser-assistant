@@ -14,8 +14,10 @@ back to the model and repeats until the goal is reached.
 
 ## Features
 
-- Multiple independent assistants, each with its own tools, instructions and history, created with
+- Multiple independent assistants, each with its own instructions and history, created with
   `Assistant.createSession` and listed with `Assistant.listSessions`.
+- Sessions survive a page refresh: they are stored in a configurable async storage (`LocalStorage` by
+  default, `InMemoryStorage` for non persistent sessions) and restored lazily, on the first interaction.
 - Tools described with a name, a description and a JSON Schema for the arguments.
 - Model output constrained with `responseConstraint` (JSON Schema) **and** validated by the library, with
   automatic retry on malformed answers.
@@ -39,7 +41,11 @@ npm install @alfredo.salzillo/browser-assistant
 ## Usage
 
 ```ts
-import { Assistant, defineTool } from "@alfredo.salzillo/browser-assistant";
+import {
+  Assistant,
+  defineTool,
+  LocalStorage,
+} from "@alfredo.salzillo/browser-assistant";
 
 const todos: string[] = [];
 
@@ -67,8 +73,13 @@ const listTodos = defineTool({
   execute: () => todos,
 });
 
-const assistant = await Assistant.createSession({
+// Configure the assistants once, before any other `Assistant` method.
+Assistant.config({
+  storage: LocalStorage, // the default, sessions survive a page refresh
   tools: [addTodo, listTodos],
+});
+
+const assistant = await Assistant.createSession({
   instructions: "You manage the user's todo list.",
   onBeforeCall: (call) => confirm(`Run ${call.name}?`),
   onStep: (step) => console.log(step),
@@ -90,8 +101,13 @@ session. `Assistant.listSessions()` is an async iterator over the live assistant
 in creation order:
 
 ```ts
-const todoAssistant = await Assistant.createSession({ tools: todoTools });
-const pageAssistant = await Assistant.createSession({ tools: pageTools });
+// `Assistant.config({ tools: [...todoTools, ...pageTools] })` was called before
+const todoAssistant = await Assistant.createSession({
+  toolNames: todoTools.map((tool) => tool.name),
+});
+const pageAssistant = await Assistant.createSession({
+  toolNames: pageTools.map((tool) => tool.name),
+});
 
 for await (const assistant of Assistant.listSessions()) {
   console.log(assistant.id); // todoAssistant, then pageAssistant
@@ -99,6 +115,36 @@ for await (const assistant of Assistant.listSessions()) {
 
 todoAssistant.destroy(); // no longer listed
 ```
+
+### Configuration and persistence
+
+`Assistant.config` sets the global configuration and **must be called before** any other `Assistant` method
+(`createSession`, `listSessions`): calling it afterwards throws an `Error`. The tools are registered in the
+config (a session selects a subset of them with `toolNames`), and so is the storage:
+
+```ts
+import {
+  Assistant,
+  InMemoryStorage,
+  LocalStorage,
+} from "@alfredo.salzillo/browser-assistant";
+
+Assistant.config({ storage: LocalStorage, tools }); // default storage, persistent
+Assistant.config({ storage: InMemoryStorage, tools }); // lost on reload
+Assistant.config({ storage: new MyRemoteStorage(), tools }); // any `AssistantStorage`
+```
+
+A storage implements the async `AssistantStorage` interface (`getItem`, `setItem`, `removeItem`, all returning
+promises), so a remote storage can be added in the future. `LocalStorage` falls back to memory when
+`localStorage` is not available.
+
+The first `createSession` or `listSessions` call hydrates the stored sessions. A restored session recreates its
+`LanguageModel` session only at its first `run`, with its saved history. Tools still present in the config are
+restored; the tools that no longer exist are sent to the session, once, as removed (and recorded in its
+`history`). Pass `languageModel` / `monitor` to `run` to control how a restored session creates its model.
+
+> **Breaking change (0.1.0)**: `tools` is no longer an option of `Assistant.createSession`, register them with
+> `Assistant.config({ tools })` and select them with `toolNames`.
 
 ### Availability
 
@@ -162,32 +208,41 @@ A call `status` is `success`, `error` (the tool threw or the arguments are inval
 
 Creates a new assistant and resolves to an `Assistant` instance (the constructor is private).
 
-| Option                 | Type                                          | Default                    | Description                                               |
-| ---------------------- | --------------------------------------------- | -------------------------- | --------------------------------------------------------- |
-| `tools`                | `Tool[]`                                      | `[]`                       | Functions the assistant can call. Names must be unique.   |
-| `instructions`         | `string`                                      | `undefined`                | Extra instructions appended to the system prompt.         |
-| `maxSteps`             | `number`                                      | `10`                       | Maximum model responses per run.                          |
-| `maxRetries`           | `number`                                      | `1`                        | Retries when the model answers with invalid JSON.         |
-| `onBeforeCall`         | `(call, tool) => boolean \| Promise<boolean>` | `undefined`                | Approve or reject a call before it runs.                  |
-| `onStep`               | `(step) => void`                              | `undefined`                | Called after every completed step.                        |
-| `onToolCall`           | `(call) => void`                              | `undefined`                | Called before a tool runs.                                |
-| `onToolResult`         | `(result) => void`                            | `undefined`                | Called after a tool runs.                                 |
-| `monitor`              | `(monitor) => void`                           | `undefined`                | Forwarded to `LanguageModel.create` (download progress).  |
-| `signal`               | `AbortSignal`                                 | `undefined`                | Aborts the creation of the `LanguageModel` session.       |
-| `languageModelOptions` | `LanguageModelCreateOptions`                  | `undefined`                | Extra options forwarded to `LanguageModel.create`.        |
-| `languageModel`        | `LanguageModelStatic`                         | `globalThis.LanguageModel` | Custom `LanguageModel` implementation (useful for tests). |
+| Option                 | Type                                          | Default                    | Description                                                 |
+| ---------------------- | --------------------------------------------- | -------------------------- | ----------------------------------------------------------- |
+| `toolNames`            | `string[]`                                    | all the configured tools   | Names of the `Assistant.config` tools the session can call. |
+| `instructions`         | `string`                                      | `undefined`                | Extra instructions appended to the system prompt.           |
+| `maxSteps`             | `number`                                      | `10`                       | Maximum model responses per run.                            |
+| `maxRetries`           | `number`                                      | `1`                        | Retries when the model answers with invalid JSON.           |
+| `onBeforeCall`         | `(call, tool) => boolean \| Promise<boolean>` | `undefined`                | Approve or reject a call before it runs.                    |
+| `onStep`               | `(step) => void`                              | `undefined`                | Called after every completed step.                          |
+| `onToolCall`           | `(call) => void`                              | `undefined`                | Called before a tool runs.                                  |
+| `onToolResult`         | `(result) => void`                            | `undefined`                | Called after a tool runs.                                   |
+| `monitor`              | `(monitor) => void`                           | `undefined`                | Forwarded to `LanguageModel.create` (download progress).    |
+| `signal`               | `AbortSignal`                                 | `undefined`                | Aborts the creation of the `LanguageModel` session.         |
+| `languageModelOptions` | `LanguageModelCreateOptions`                  | `undefined`                | Extra options forwarded to `LanguageModel.create`.          |
+| `languageModel`        | `LanguageModelStatic`                         | `globalThis.LanguageModel` | Custom `LanguageModel` implementation (useful for tests).   |
 
 Returns a `Promise<Assistant>`. An `Assistant` has:
 
 - `id`: unique id of the assistant,
 - `tools`: the tools of the assistant,
 - `history`: all the steps of all the runs,
-- `run(goal, { signal?, maxSteps? })`: runs the agentic loop and resolves to `{ status, message, steps }`,
+- `run(goal, { signal?, maxSteps?, languageModel?, monitor? })`: runs the agentic loop and resolves to `{ status, message, steps }`,
 - `destroy()`: destroys the underlying `LanguageModel` session and removes the assistant from
-  `Assistant.listSessions()`.
+  `Assistant.listSessions()` and from the storage.
 
 `run` rejects with an `AssistantResponseError` when the model keeps answering with invalid JSON after
 `maxRetries` retries, and with the abort reason when the run `signal` is aborted.
+
+### `Assistant.config(config)`
+
+| Option    | Type                                  | Default        | Description                                        |
+| --------- | ------------------------------------- | -------------- | -------------------------------------------------- |
+| `storage` | `AssistantStorage` or a storage class | `LocalStorage` | Where the sessions are stored (all methods async). |
+| `tools`   | `Tool[]`                              | `[]`           | Functions the assistants can call. Unique names.   |
+
+Throws if called after `createSession` or `listSessions`.
 
 ### `Assistant.listSessions()`
 
@@ -200,6 +255,7 @@ destroyed) in creation order. Assistants destroyed while iterating are skipped.
 | --------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `@alfredo.salzillo/browser-assistant`               | Everything below.                                                                      |
 | `@alfredo.salzillo/browser-assistant/assistant`     | `Assistant`, `AssistantResponseError`.                                                 |
+| `@alfredo.salzillo/browser-assistant/storage`       | `AssistantStorage`, `LocalStorage`, `InMemoryStorage`.                                 |
 | `@alfredo.salzillo/browser-assistant/tools`         | `defineTool`, `assertValidTools`.                                                      |
 | `@alfredo.salzillo/browser-assistant/protocol`      | `buildInstructions`, `buildResponseSchema`, `parseResponse` and the prompt formatters. |
 | `@alfredo.salzillo/browser-assistant/schema`        | `validateSchema` (JSON Schema subset validator).                                       |
