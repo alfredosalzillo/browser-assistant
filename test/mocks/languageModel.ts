@@ -11,6 +11,7 @@ export type ScriptedResponse = string | object;
 export type MockLanguageModelSession = LanguageModelSession & {
   createOptions: LanguageModelCreateOptions;
   prompts: { input: string; options?: LanguageModelPromptOptions }[];
+  appended: unknown[];
   destroyed: boolean;
 };
 
@@ -35,7 +36,12 @@ export const createMockLanguageModel = (
       const session: MockLanguageModelSession = {
         createOptions,
         prompts: [],
+        appended: [],
         destroyed: false,
+        append: async (input) => {
+          session.appended.push(input);
+          return undefined;
+        },
         prompt: async (input, options) => {
           session.prompts.push({ input: String(input), options });
           const next = queue.shift();

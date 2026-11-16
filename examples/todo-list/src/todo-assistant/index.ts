@@ -1,6 +1,7 @@
 import {
   Assistant,
   type AssistantOptions,
+  InMemoryStorage,
 } from "@alfredo.salzillo/browser-assistant";
 import type { TodoStore } from "../todoStore";
 import { createTodoTools } from "./todoTools";
@@ -40,10 +41,28 @@ export const todoAssistantPresets: TodoAssistantPreset[] = [
 
 export type CreateTodoAssistantOptions = Omit<
   AssistantOptions,
-  "tools" | "instructions"
+  "toolNames" | "instructions"
 > & {
   store: TodoStore;
   preset: TodoAssistantPreset;
+};
+
+let configuredStore: TodoStore | undefined;
+
+/**
+ * configureTodoAssistant registers the tools of the store with `Assistant.config`. The config can
+ * be set only once, before the first session is created. The todos are not persisted, so the
+ * sessions are kept in memory too.
+ */
+const configureTodoAssistant = (store: TodoStore) => {
+  if (configuredStore) {
+    if (configuredStore !== store) {
+      throw new Error("The todo assistant is already configured for a store");
+    }
+    return;
+  }
+  Assistant.config({ storage: InMemoryStorage, tools: createTodoTools(store) });
+  configuredStore = store;
 };
 
 /**
@@ -54,11 +73,11 @@ export const createTodoAssistant = ({
   store,
   preset,
   ...options
-}: CreateTodoAssistantOptions): Promise<Assistant> =>
-  Assistant.createSession({
+}: CreateTodoAssistantOptions): Promise<Assistant> => {
+  configureTodoAssistant(store);
+  return Assistant.createSession({
     ...options,
-    tools: createTodoTools(store).filter((tool) =>
-      preset.toolNames.includes(tool.name),
-    ),
+    toolNames: preset.toolNames,
     instructions: preset.instructions,
   });
+};

@@ -2,6 +2,11 @@ import type {
   LanguageModelCreateOptions,
   LanguageModelStatic,
 } from "./languageModel";
+import type {
+  AssistantStorage,
+  InMemoryStorage,
+  LocalStorage,
+} from "./storage";
 
 export type JSONSchemaType =
   | "string"
@@ -108,13 +113,23 @@ export type RunResult = {
 export type RunOptions = {
   signal?: AbortSignal;
   maxSteps?: number;
+  /** used to create the `LanguageModel` session of a restored session on its first run */
+  languageModel?: LanguageModelStatic;
+  /** download monitor used when a restored session creates its `LanguageModel` session */
+  monitor?: LanguageModelCreateOptions["monitor"];
+};
+
+export type AssistantConfig = {
+  storage?: AssistantStorage | typeof LocalStorage | typeof InMemoryStorage;
+  tools?: AnyTool[];
+  [key: string]: unknown;
 };
 
 /**
  * Options of `Assistant.createSession`.
  */
 export type AssistantOptions = {
-  tools?: AnyTool[];
+  toolNames?: string[];
   instructions?: string;
   maxSteps?: number;
   maxRetries?: number;

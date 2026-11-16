@@ -66,7 +66,7 @@ const features = [
   {
     icon: <AccountTreeIcon />,
     title: "Multiple assistants",
-    text: "Create independent assistants with Assistant.createSession, each with its own tools, instructions and history, and list the live ones with Assistant.listSessions.",
+    text: "Create independent assistants with Assistant.createSession, each with its own instructions and history, and list the live ones with Assistant.listSessions. Sessions are stored (localStorage by default) and survive a page refresh.",
   },
   {
     icon: <DataObjectIcon />,
@@ -160,10 +160,15 @@ const listTodos = defineTool({
   execute: () => todos,
 });`;
 
-const runCode = `import { Assistant } from "@alfredo.salzillo/browser-assistant";
+const runCode = `import { Assistant, LocalStorage } from "@alfredo.salzillo/browser-assistant";
+
+// once, before any other Assistant method (throws otherwise)
+Assistant.config({
+  storage: LocalStorage, // default; use InMemoryStorage for non persistent sessions
+  tools: [addTodo, listTodos],
+});
 
 const assistant = await Assistant.createSession({
-  tools: [addTodo, listTodos],
   instructions: "You manage the user's todo list.",
   maxSteps: 10,
   onBeforeCall: (call) => confirm(\`Run \${call.name}?\`),
@@ -178,8 +183,13 @@ result.steps; // every model response with the executed calls
 
 assistant.destroy();`;
 
-const multipleCode = `const todoAssistant = await Assistant.createSession({ tools: todoTools });
-const pageAssistant = await Assistant.createSession({ tools: pageTools });
+const multipleCode = `// Assistant.config({ tools: [...todoTools, ...pageTools] }) was called before
+const todoAssistant = await Assistant.createSession({
+  toolNames: todoTools.map((tool) => tool.name),
+});
+const pageAssistant = await Assistant.createSession({
+  toolNames: pageTools.map((tool) => tool.name),
+});
 
 for await (const assistant of Assistant.listSessions()) {
   console.log(assistant.id); // todoAssistant, then pageAssistant
@@ -678,10 +688,13 @@ const Usage = () => (
         title="3. Create an assistant and run it"
         text={
           <>
+            Tools and storage are registered once with{" "}
+            <code>Assistant.config</code>, before any other call.{" "}
             <code>Assistant.createSession</code> resolves to an assistant backed
             by its own <code>LanguageModel</code> session; <code>run</code>{" "}
             loops until the goal is reached or <code>maxSteps</code> (default
-            10) is hit.
+            10) is hit. Stored sessions are restored after a refresh, at their
+            first run.
           </>
         }
         code={runCode}
@@ -690,9 +703,9 @@ const Usage = () => (
         title="4. Multiple assistants"
         text={
           <>
-            Each assistant has its own tools and history.{" "}
-            <code>Assistant.listSessions()</code> is an async iterator over the
-            live ones, in creation order.
+            Each assistant selects its tools with <code>toolNames</code> and has
+            its own history. <code>Assistant.listSessions()</code> is an async
+            iterator over the live ones, in creation order.
           </>
         }
         code={multipleCode}
@@ -746,8 +759,12 @@ const TryIt = () => (
   },
 });
 
-const assistant = await Assistant.createSession({
+Assistant.config({
+  storage: InMemoryStorage,
   tools: [getTheme, setPrimaryColor, setSecondaryColor, setMode, resetTheme],
+});
+
+const assistant = await Assistant.createSession({
   instructions: "You change the look of the website only through the tools.",
   maxSteps: 6,
 });

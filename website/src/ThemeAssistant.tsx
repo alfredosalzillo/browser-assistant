@@ -1,5 +1,8 @@
 import type { Step } from "@alfredo.salzillo/browser-assistant";
-import { Assistant } from "@alfredo.salzillo/browser-assistant";
+import {
+  Assistant,
+  InMemoryStorage,
+} from "@alfredo.salzillo/browser-assistant";
 import { availability } from "@alfredo.salzillo/browser-assistant/availability";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -50,10 +53,25 @@ const instructions = [
   "When done, answer with a short final message describing the change.",
 ].join("\n");
 
+const themeHolder: { current: ReturnType<typeof useSiteTheme> | null } = {
+  current: null,
+};
+
+try {
+  Assistant.config({
+    storage: InMemoryStorage,
+    tools: createThemeTools(() => {
+      if (!themeHolder.current) throw new Error("The theme is not available");
+      return themeHolder.current;
+    }),
+  });
+} catch {
+  // already configured (for example after a hot module reload)
+}
+
 const ThemeAssistant = () => {
   const theme = useSiteTheme();
-  const themeRef = useRef(theme);
-  themeRef.current = theme;
+  themeHolder.current = theme;
 
   const [support, setSupport] = useState<Support>("checking");
   const [prompt, setPrompt] = useState("");
@@ -110,7 +128,6 @@ const ThemeAssistant = () => {
     if (!assistantRef.current) {
       const created = Assistant.createSession({
         instructions,
-        tools: createThemeTools(() => themeRef.current),
         maxSteps: 6,
         onStep: (step) => {
           if (step.response.type === "calls") append({ kind: "step", step });

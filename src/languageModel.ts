@@ -29,6 +29,7 @@ export interface LanguageModelSession {
     input: LanguageModelPrompt,
     options?: LanguageModelPromptOptions,
   ): Promise<string>;
+  append(input: LanguageModelPrompt): Promise<undefined>;
   destroy(): void;
 }
 

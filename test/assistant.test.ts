@@ -1,4 +1,5 @@
 import { Assistant, AssistantResponseError } from "../src/assistant";
+import { InMemoryStorage, LocalStorage } from "../src/storage";
 import { defineTool } from "../src/tools";
 import type { AnyTool } from "../src/types";
 import { createMockLanguageModel } from "./mocks/languageModel";
@@ -49,16 +50,24 @@ const listAssistants = async () => {
   return assistants;
 };
 
+const configure = (tools: AnyTool[] = []) =>
+  Assistant.config({ storage: new InMemoryStorage(), tools });
+
 describe("Assistant", () => {
-  afterEach(async () => {
+  beforeEach(() => {
+    Assistant._reset();
+    configure();
+  });
+
+  afterEach(() => {
     vi.unstubAllGlobals();
-    for await (const assistant of Assistant.listSessions()) assistant.destroy();
+    Assistant._reset();
   });
 
   it("creates an Assistant instance with a Promise", async () => {
     const { tools } = createTodoTools();
+    configure(tools);
     const promise = Assistant.createSession({
-      tools,
       languageModel: createMockLanguageModel(),
     });
 
@@ -149,12 +158,9 @@ describe("Assistant", () => {
 
   it("throws on invalid tools", async () => {
     const { tools } = createTodoTools();
-    await expect(
-      Assistant.createSession({
-        tools: [...tools, tools[0]],
-        languageModel: createMockLanguageModel(),
-      }),
-    ).rejects.toThrow("Duplicated tool name");
+    expect(() => configure([...tools, tools[0]])).toThrow(
+      "Duplicated tool name",
+    );
   });
 
   it("initializes the LanguageModel with the JSON instructions", async () => {
@@ -162,8 +168,8 @@ describe("Assistant", () => {
     const languageModel = createMockLanguageModel();
     const monitor = vi.fn();
     vi.stubGlobal("LanguageModel", languageModel);
+    configure(tools);
     await Assistant.createSession({
-      tools,
       instructions: "Manage todos",
       monitor,
       languageModelOptions: { temperature: 0.2 },
@@ -191,8 +197,8 @@ describe("Assistant", () => {
     const onStep = vi.fn();
     const onToolCall = vi.fn();
     const onToolResult = vi.fn();
+    configure(tools);
     const session = await Assistant.createSession({
-      tools,
       languageModel,
       onStep,
       onToolCall,
@@ -237,7 +243,8 @@ describe("Assistant", () => {
       calls(["removeTodo", { id: 9 }], ["addTodo", { name: "x" }]),
       final("Could not do it"),
     ]);
-    const session = await Assistant.createSession({ tools, languageModel });
+    configure(tools);
+    const session = await Assistant.createSession({ languageModel });
 
     const result = await session.run("remove todo 9");
 
@@ -267,8 +274,8 @@ describe("Assistant", () => {
       final("Rejected"),
     ]);
     const onBeforeCall = vi.fn(async () => false);
+    configure(tools);
     const session = await Assistant.createSession({
-      tools,
       languageModel,
       onBeforeCall,
     });
@@ -312,8 +319,8 @@ describe("Assistant", () => {
       calls(["addTodo", { title: "b" }]),
       calls(["addTodo", { title: "c" }]),
     ]);
+    configure(tools);
     const session = await Assistant.createSession({
-      tools,
       languageModel,
       maxSteps: 3,
     });
@@ -347,10 +354,8 @@ describe("Assistant", () => {
       calls(["ping", {}]),
       final("pong"),
     ]);
-    const session = await Assistant.createSession({
-      tools: [tool],
-      languageModel,
-    });
+    configure([tool]);
+    const session = await Assistant.createSession({ languageModel });
     const controller = new AbortController();
 
     await session.run("ping", { signal: controller.signal });
@@ -399,5 +404,214 @@ describe("Assistant", () => {
     expect(languageModel.sessions).toHaveLength(2);
     expect(languageModel.sessions[0].prompts).toHaveLength(1);
     expect(languageModel.sessions[1].prompts).toHaveLength(1);
+  });
+
+  describe("config and persistence", () => {
+    const pingTool = (name: string) =>
+      defineTool({
+        name,
+        description: `Tool ${name}`,
+        parameters: { type: "object", properties: {} },
+        execute: () => "ok",
+      });
+
+    it("throws when config is called after createSession or listSessions", async () => {
+      configure();
+      await listAssistants();
+      expect(() => configure()).toThrow(
+        "Assistant.config must be called before createSession or listSessions",
+      );
+
+      Assistant._reset();
+      configure();
+      await Assistant.createSession({
+        languageModel: createMockLanguageModel(),
+      });
+      expect(() => configure()).toThrow("must be called before");
+    });
+
+    it("fails to create a session with a tool that is not configured", async () => {
+      configure([pingTool("ping")]);
+      await expect(
+        Assistant.createSession({
+          toolNames: ["missing"],
+          languageModel: createMockLanguageModel(),
+        }),
+      ).rejects.toThrow('Tool "missing" is not registered');
+    });
+
+    it("selects a subset of the configured tools with toolNames", async () => {
+      configure([pingTool("a"), pingTool("b")]);
+      const session = await Assistant.createSession({
+        toolNames: ["b"],
+        languageModel: createMockLanguageModel(),
+      });
+      expect(session.tools.map((tool) => tool.name)).toEqual(["b"]);
+    });
+
+    it("stores the sessions asynchronously in the configured storage", async () => {
+      const storage = new InMemoryStorage();
+      const setItem = vi.spyOn(storage, "setItem");
+      Assistant.config({ storage, tools: [pingTool("ping")] });
+      const session = await Assistant.createSession({
+        languageModel: createMockLanguageModel(),
+      });
+
+      expect(setItem).toHaveBeenCalled();
+      const stored = JSON.parse(
+        (await storage.getItem("browser-assistant:sessions")) as string,
+      );
+      expect(stored).toHaveLength(1);
+      expect(stored[0].id).toBe(session.id);
+      expect(stored[0].toolNames).toEqual(["ping"]);
+
+      session.destroy();
+      await vi.waitFor(async () => {
+        expect(
+          JSON.parse(
+            (await storage.getItem("browser-assistant:sessions")) as string,
+          ),
+        ).toEqual([]);
+      });
+    });
+
+    it("hydrates the stored sessions lazily and recreates the model on the first run", async () => {
+      const storage = new InMemoryStorage();
+      const tools = [pingTool("ping")];
+      Assistant.config({ storage, tools });
+      const original = await Assistant.createSession({
+        instructions: "Be brief",
+        languageModel: createMockLanguageModel([final("first")]),
+      });
+      await original.run("one");
+
+      // simulate a page reload
+      Assistant._reset();
+      Assistant.config({ storage, tools });
+      const sessions = await listAssistants();
+
+      expect(sessions).toHaveLength(1);
+      const [restored] = sessions;
+      expect(restored.id).toBe(original.id);
+      expect(restored.history).toEqual(original.history);
+      expect(restored.tools.map((tool) => tool.name)).toEqual(["ping"]);
+
+      const languageModel = createMockLanguageModel([final("second")]);
+      expect(languageModel.sessions).toHaveLength(0);
+      const result = await restored.run("two", { languageModel });
+      expect(result.message).toBe("second");
+      expect(languageModel.sessions).toHaveLength(1);
+      expect(
+        languageModel.sessions[0].createOptions.initialPrompts?.[0].content,
+      ).toContain("Be brief");
+      expect(restored.history).toHaveLength(2);
+      expect(languageModel.sessions[0].appended).toEqual([]);
+    });
+
+    it("keeps the creation order across reloads", async () => {
+      const storage = new InMemoryStorage();
+      Assistant.config({ storage });
+      const languageModel = createMockLanguageModel();
+      const first = await Assistant.createSession({ languageModel });
+      const second = await Assistant.createSession({ languageModel });
+
+      Assistant._reset();
+      Assistant.config({ storage });
+      const ids = (await listAssistants()).map((session) => session.id);
+      expect(ids).toEqual([first.id, second.id]);
+    });
+
+    it("notifies the session about the tools removed after hydration", async () => {
+      const storage = new InMemoryStorage();
+      Assistant.config({
+        storage,
+        tools: [pingTool("keep"), pingTool("gone")],
+      });
+      const original = await Assistant.createSession({
+        languageModel: createMockLanguageModel(),
+      });
+
+      Assistant._reset();
+      Assistant.config({ storage, tools: [pingTool("keep")] });
+      const [restored] = await listAssistants();
+      expect(restored.id).toBe(original.id);
+      expect(restored.tools.map((tool) => tool.name)).toEqual(["keep"]);
+
+      const languageModel = createMockLanguageModel([final("done")]);
+      await restored.run("hello", { languageModel });
+
+      const [model] = languageModel.sessions;
+      expect(model.appended).toHaveLength(1);
+      expect(String(model.appended[0])).toContain("gone");
+      expect(model.createOptions.initialPrompts?.[0].content).not.toContain(
+        "- gone:",
+      );
+      expect(restored.history[0].goal).toBe(
+        "[system] tool removal notification",
+      );
+
+      // the notification is sent only once
+      Assistant._reset();
+      Assistant.config({ storage, tools: [pingTool("keep")] });
+      const [again] = await listAssistants();
+      const next = createMockLanguageModel([final("again")]);
+      await again.run("hello again", { languageModel: next });
+      expect(next.sessions[0].appended).toEqual([]);
+    });
+
+    it("ignores corrupted stored data", async () => {
+      const storage = new InMemoryStorage();
+      await storage.setItem("browser-assistant:sessions", "{not json");
+      Assistant.config({ storage });
+      await expect(listAssistants()).resolves.toEqual([]);
+    });
+
+    it("supports a storage passed as a class and falls back to memory without localStorage", async () => {
+      vi.stubGlobal("localStorage", undefined);
+      await LocalStorage.setItem("k", "v");
+      await expect(LocalStorage.getItem("k")).resolves.toBe("v");
+      await LocalStorage.removeItem("k");
+      await expect(LocalStorage.getItem("k")).resolves.toBeNull();
+
+      Assistant.config({ storage: InMemoryStorage });
+      const session = await Assistant.createSession({
+        languageModel: createMockLanguageModel(),
+      });
+      await expect(
+        InMemoryStorage.getItem("browser-assistant:sessions"),
+      ).resolves.toContain(session.id);
+      session.destroy();
+    });
+
+    it("stores the sessions in localStorage by default", async () => {
+      const data = new Map<string, string>();
+      vi.stubGlobal("localStorage", {
+        getItem: (k: string) => data.get(k) ?? null,
+        setItem: (k: string, v: string) => data.set(k, v),
+        removeItem: (k: string) => data.delete(k),
+      });
+      Assistant._reset();
+      const session = await Assistant.createSession({
+        languageModel: createMockLanguageModel(),
+      });
+
+      expect([...data.values()].join()).toContain(session.id);
+      session.destroy();
+    });
+
+    it("uses localStorage when available", async () => {
+      const data = new Map<string, string>();
+      vi.stubGlobal("localStorage", {
+        getItem: (k: string) => data.get(k) ?? null,
+        setItem: (k: string, v: string) => data.set(k, v),
+        removeItem: (k: string) => data.delete(k),
+      });
+      const instance = new LocalStorage();
+      await instance.setItem("a", "1");
+      expect(data.get("a")).toBe("1");
+      await expect(instance.getItem("a")).resolves.toBe("1");
+      await instance.removeItem("a");
+      expect(data.has("a")).toBe(false);
+    });
   });
 });
